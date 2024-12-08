@@ -9,8 +9,8 @@ permissions:
 
 jobs:
   lint:
-    runs-on: copilot-app-runners
-    name: Lint Model Gateway
+    runs-on: ubuntu-latest
+    name: Lint
     steps:
       - name: 🔔 Checkout Code
         uses: actions/checkout@v4
