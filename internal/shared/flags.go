@@ -14,6 +14,7 @@ var (
 	ReportCategory = flag.String("category", "", "Category ID")
 	ArchiveChannel = flag.String("archive", "", "Archive channel ID")
 	LogChannel     = flag.String("log", "", "Log channel ID")
+	PrettyLogs     = flag.Bool("pretty", false, "Pretty logs")
 )
 
 func Init() {
@@ -43,5 +44,12 @@ func Init() {
 	// If LogChannel is not provided, use the one from the .env file
 	if *LogChannel == "" {
 		*LogChannel = os.Getenv("DISCORD_GUILD_LOG_CHANNEL")
+	}
+	// If PrettyLogs is not provided, use the one from the .env file
+	if !*PrettyLogs {
+		pretty_logs := os.Getenv("PRETTY_LOGS")
+		if pretty_logs == "true" {
+			*PrettyLogs = true
+		}
 	}
 }
