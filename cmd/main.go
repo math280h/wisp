@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"math280h/wisp/internal/db"
+	"math280h/wisp/internal/moderation"
 	"math280h/wisp/internal/reports"
 	"math280h/wisp/internal/shared"
 
@@ -45,11 +46,50 @@ var (
 			Name:        "archive",
 			Description: "Archive the report",
 		},
+		{
+			Name:        "warn",
+			Description: "Warn the user",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "The user to warn",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "strike",
+			Description: "Strike the user",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "The user to strike",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "info",
+			Description: "Get information about a user",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "The user to get information about",
+					Required:    true,
+				},
+			},
+		},
 	}
 
 	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		"close":   reports.Close,
 		"archive": reports.Archive,
+		"warn":    moderation.WarnCommand,
+		"strike":  moderation.StrikeCommand,
+		"info":    moderation.InfoCommand,
 	}
 )
 

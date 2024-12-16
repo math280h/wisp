@@ -29,7 +29,7 @@ func InitDb() {
 
 	_, err = DBClient.Exec(`CREATE TABLE IF NOT EXISTS users (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		user_id TEXT,
+		user_id TEXT UNIQUE,
 		nickname TEXT,
 		points INTEGER DEFAULT 0
 	)`)

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -15,6 +16,11 @@ var (
 	ArchiveChannel = flag.String("archive", "", "Archive channel ID")
 	LogChannel     = flag.String("log", "", "Log channel ID")
 	PrettyLogs     = flag.Bool("pretty", false, "Pretty logs")
+
+	// Moderation Settings
+	WarnPoints   = flag.Int("warnpoints", 10, "Number of points to warn a user")
+	StrikePoints = flag.Int("strikepoints", 50, "Number of points to strike a user")
+	MaxPoints    = flag.Int("maxpoints", 100, "Number of points to ban a user")
 )
 
 func Init() {
@@ -50,6 +56,30 @@ func Init() {
 		pretty_logs := os.Getenv("PRETTY_LOGS")
 		if pretty_logs == "true" {
 			*PrettyLogs = true
+		}
+	}
+
+	// Moderation Settings
+
+	// If WarnPoints is not provided, use the one from the .env file
+	if *WarnPoints == 10 {
+		warn_points := os.Getenv("WARN_POINTS")
+		if warn_points != "" {
+			*WarnPoints, _ = strconv.Atoi(warn_points)
+		}
+	}
+	// If StrikePoints is not provided, use the one from the .env file
+	if *StrikePoints == 50 {
+		strike_points := os.Getenv("STRIKE_POINTS")
+		if strike_points != "" {
+			*StrikePoints, _ = strconv.Atoi(strike_points)
+		}
+	}
+	// If MaxPoints is not provided, use the one from the .env file
+	if *MaxPoints == 100 {
+		max_points := os.Getenv("MAX_POINTS")
+		if max_points != "" {
+			*MaxPoints, _ = strconv.Atoi(max_points)
 		}
 	}
 }
