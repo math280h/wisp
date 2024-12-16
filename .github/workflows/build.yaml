@@ -1,8 +1,7 @@
 name: Build docker image and push to ghcr.io
 on:
-    push:
-        branches:
-        - main
+    release:
+        types: [published]
 
 permissions:
     contents: read
@@ -33,4 +32,4 @@ jobs:
             context: .
             file: ./Dockerfile
             push: true
-            tags: ghcr.io/${{ github.repository }}/wisp:latest
+            tags: ghcr.io/${{ github.repository }}/wisp:${{ github.ref }}

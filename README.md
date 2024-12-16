@@ -34,5 +34,5 @@ Create a new bot on the [Discord Developer Portal](https://discord.com/developer
 
 <!-- TODO:: Get actual link for docker image -->
 ```bash
-docker run -d --env-file .env ghcr.io/username/repo:tag
+docker run -d --env-file .env ghcr.io/math280h/wisp/wisp:latest
 ```
