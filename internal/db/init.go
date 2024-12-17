@@ -36,4 +36,15 @@ func InitDb() {
 	if err != nil {
 		panic(err)
 	}
+
+	_, err = DBClient.Exec(`CREATE TABLE IF NOT EXISTS warns (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id TEXT,
+		reason TEXT,
+		moderator_id TEXT,
+		created_at TEXT DEFAULT CURRENT_TIMESTAMP
+	)`)
+	if err != nil {
+		panic(err)
+	}
 }

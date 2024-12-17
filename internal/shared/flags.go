@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
 )
 
@@ -22,6 +23,8 @@ var (
 	StrikePoints = flag.Int("strikepoints", 50, "Number of points to strike a user")
 	MaxPoints    = flag.Int("maxpoints", 100, "Number of points to ban a user")
 )
+
+var GuildName string = "Unknown"
 
 func Init() {
 	flag.Parse()
@@ -82,4 +85,8 @@ func Init() {
 			*MaxPoints, _ = strconv.Atoi(max_points)
 		}
 	}
+}
+
+func SetGuildName(s *discordgo.Session) {
+	GuildName = s.State.Guilds[0].Name
 }

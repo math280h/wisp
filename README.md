@@ -1,10 +1,14 @@
+<p align="center">
+  <img src="./assets/logo.png" width="240px" height="240px" />
+</p>
 <h1 align="center">
     Wisp
 </h1>
-
 <p align="center">
   Wisp is a simple, lightweight moderation bot for Discord. It is designed to be easy to use and easy to set up.
 </p>
+
+
 
 
 ## Features

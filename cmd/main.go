@@ -36,19 +36,26 @@ func init() {
 	}
 }
 
+func int64Ptr(i int64) *int64 {
+	return &i
+}
+
 var (
 	commands = []*discordgo.ApplicationCommand{
 		{
-			Name:        "close",
-			Description: "Close the report",
+			Name:                     "close",
+			Description:              "Close the report",
+			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
 		},
 		{
-			Name:        "archive",
-			Description: "Archive the report",
+			Name:                     "archive",
+			Description:              "Archive the report",
+			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
 		},
 		{
-			Name:        "warn",
-			Description: "Warn the user",
+			Name:                     "warn",
+			Description:              "Warn the user",
+			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionUser,
@@ -56,11 +63,18 @@ var (
 					Description: "The user to warn",
 					Required:    true,
 				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "reason",
+					Description: "The reason for the warning",
+					Required:    true,
+				},
 			},
 		},
 		{
-			Name:        "strike",
-			Description: "Strike the user",
+			Name:                     "strike",
+			Description:              "Strike the user",
+			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionUser,
@@ -68,11 +82,18 @@ var (
 					Description: "The user to strike",
 					Required:    true,
 				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "reason",
+					Description: "The reason for the strike",
+					Required:    true,
+				},
 			},
 		},
 		{
-			Name:        "info",
-			Description: "Get information about a user",
+			Name:                     "info",
+			Description:              "Get information about a user",
+			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionUser,
@@ -124,6 +145,9 @@ func main() {
 	s.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentsDirectMessages
 
 	defer s.Close()
+
+	shared.SetGuildName(s)
+	log.Debug().Msg("Guild name: " + shared.GuildName)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
