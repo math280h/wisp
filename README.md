@@ -8,24 +8,30 @@
   Wisp is a simple, lightweight moderation bot for Discord. It is designed to be easy to use and easy to set up.
 </p>
 
-
-
-
 ## Features
 
 - Reports
   - Users can open reports by dm'ing the bot
   - All moderators can see/respond to reports and their identities are hidden
   - Archived reports are stored in a channel for future reference
+- Warns and Strikes
+  - Users can be warned and given strikes
+  - Warn and strike gives the user "points" which when they reach a certain threshold, they are automatically banned 
+    - Both the points given and the threshold are configurable
+  - Notifies the user when they are warned or given a strike
+  - Ability to historically view all warns and strikes for a user
+- Ban / Kick
+  - Users can be banned or kicked from the server
+  - Points
+    - When a user is banned, they are given 100% of the threshold points
+    - When a user is kicked, they are given 50% of the threshold points
+  - Ban and kick reasons are logged
 
 ### Coming Soon
 
 - Moderation
-  - Kick
-  - Ban
   - Mute
   - Unmute
-  - Warn
   - Clear
 
 ## Getting Started

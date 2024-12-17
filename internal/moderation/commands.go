@@ -47,7 +47,7 @@ func WarnCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 	// Inform the user that they have been warned
-	embed := generateInfractionEmbed(i.Member.User.ID, reason, points)
+	embed := generateInfractionEmbed(reason, points)
 
 	userChannel, err := s.UserChannelCreate(i.Member.User.ID)
 	if err != nil {
@@ -76,7 +76,7 @@ func StrikeCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 	// Inform the user that they have been striked
-	embed := generateInfractionEmbed(i.Member.User.ID, reason, points)
+	embed := generateInfractionEmbed(reason, points)
 
 	userChannel, err := s.UserChannelCreate(i.Member.User.ID)
 	if err != nil {
@@ -84,6 +84,38 @@ func StrikeCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 	_, err = s.ChannelMessageSendEmbed(userChannel.ID, embed)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func KickCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	reason := i.ApplicationCommandData().Options[1].StringValue()
+	Kick(i.Member.User.ID, reason, i.Member.User.ID, s)
+
+	// Respond to the command
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: "User has been kicked",
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func BanCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	reason := i.ApplicationCommandData().Options[1].StringValue()
+	Ban(i.Member.User.ID, reason, i.Member.User.ID, s)
+
+	// Respond to the command
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: "User has been banned",
+		},
+	})
 	if err != nil {
 		panic(err)
 	}

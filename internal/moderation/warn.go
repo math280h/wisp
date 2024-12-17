@@ -69,3 +69,33 @@ func Strike(userID string, reason string, moderator_id string, s *discordgo.Sess
 
 	return points
 }
+
+func Kick(userID string, reason string, moderator_id string, s *discordgo.Session) int {
+	points, isOverLimit := addPointsToUser(userID, *shared.MaxPoints/2)
+	addWarnEntry(userID, reason, moderator_id)
+
+	if isOverLimit {
+		err := s.GuildBanCreateWithReason(*shared.GuildID, userID, "User has exceeded the maximum amount of warning points", 0)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	s.GuildMemberDeleteWithReason(*shared.GuildID, userID, reason)
+
+	return points
+}
+
+func Ban(userID string, reason string, moderator_id string, s *discordgo.Session) int {
+	points, isOverLimit := addPointsToUser(userID, *shared.MaxPoints)
+	addWarnEntry(userID, reason, moderator_id)
+
+	if isOverLimit {
+		err := s.GuildBanCreateWithReason(*shared.GuildID, userID, "User has exceeded the maximum amount of warning points", 0)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return points
+}

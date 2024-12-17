@@ -91,6 +91,44 @@ var (
 			},
 		},
 		{
+			Name:                     "kick",
+			Description:              "Kick the user",
+			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "The user to kick",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "reason",
+					Description: "The reason for the kick",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:                     "ban",
+			Description:              "Ban the user",
+			DefaultMemberPermissions: int64Ptr(discordgo.PermissionBanMembers),
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "The user to ban",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "reason",
+					Description: "The reason for the ban",
+					Required:    true,
+				},
+			},
+		},
+		{
 			Name:                     "info",
 			Description:              "Get information about a user",
 			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
