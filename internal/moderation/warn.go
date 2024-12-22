@@ -81,7 +81,10 @@ func Kick(userID string, reason string, moderator_id string, s *discordgo.Sessio
 		}
 	}
 
-	s.GuildMemberDeleteWithReason(*shared.GuildID, userID, reason)
+	err := s.GuildMemberDeleteWithReason(*shared.GuildID, userID, reason)
+	if err != nil {
+		panic(err)
+	}
 
 	return points
 }

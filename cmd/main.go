@@ -13,6 +13,7 @@ import (
 	"math280h/wisp/internal/moderation"
 	"math280h/wisp/internal/reports"
 	"math280h/wisp/internal/shared"
+	"math280h/wisp/internal/suggestions"
 
 	"github.com/bwmarrin/discordgo"
 	_ "github.com/mattn/go-sqlite3"
@@ -42,6 +43,48 @@ func int64Ptr(i int64) *int64 {
 
 var (
 	commands = []*discordgo.ApplicationCommand{
+		{
+			Name:                     "suggest",
+			Description:              "Suggest something for the server",
+			DefaultMemberPermissions: int64Ptr(discordgo.PermissionViewChannel),
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "suggestion",
+					Description: "The suggestion",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:                     "suggestion-status",
+			Description:              "Set the status of a suggestion",
+			DefaultMemberPermissions: int64Ptr(discordgo.PermissionAdministrator),
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "suggestion_id",
+					Description: "The ID of the suggestion",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "status",
+					Description: "The status of the suggestion",
+					Required:    true,
+					Choices: []*discordgo.ApplicationCommandOptionChoice{
+						{
+							Name:  "Approved",
+							Value: "approved",
+						},
+						{
+							Name:  "Denied",
+							Value: "denied",
+						},
+					},
+				},
+			},
+		},
 		{
 			Name:                     "close",
 			Description:              "Close the report",
@@ -144,18 +187,24 @@ var (
 	}
 
 	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
-		"close":   reports.Close,
-		"archive": reports.Archive,
-		"warn":    moderation.WarnCommand,
-		"strike":  moderation.StrikeCommand,
-		"info":    moderation.InfoCommand,
+		"close":             reports.Close,
+		"archive":           reports.Archive,
+		"warn":              moderation.WarnCommand,
+		"strike":            moderation.StrikeCommand,
+		"info":              moderation.InfoCommand,
+		"suggest":           suggestions.CreateSuggestionCommand,
+		"suggestion-status": suggestions.SetSuggestionStatusCommand,
 	}
 )
 
 func init() {
 	s.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
-			h(s, i)
+		if i.Type == discordgo.InteractionApplicationCommand {
+			// Make sure it's an application command (e.g., /mycommand)
+			if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+				h(s, i)
+			}
+			return
 		}
 	})
 }
@@ -170,6 +219,7 @@ func main() {
 	}
 
 	s.AddHandler(messageCreate)
+	s.AddHandler(suggestions.UpvoteSuggestion)
 	log.Debug().Msg("Adding commands...")
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 	for i, v := range commands {

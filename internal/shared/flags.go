@@ -22,6 +22,9 @@ var (
 	WarnPoints   = flag.Int("warnpoints", 10, "Number of points to warn a user")
 	StrikePoints = flag.Int("strikepoints", 50, "Number of points to strike a user")
 	MaxPoints    = flag.Int("maxpoints", 100, "Number of points to ban a user")
+
+	// Suggestions
+	SuggestionChannel = flag.String("suggestion", "", "Suggestion channel ID")
 )
 
 var GuildName string = "Unknown"
@@ -84,6 +87,13 @@ func Init() {
 		if max_points != "" {
 			*MaxPoints, _ = strconv.Atoi(max_points)
 		}
+	}
+
+	// Suggestions
+
+	// If SuggestionChannel is not provided, use the one from the .env file
+	if *SuggestionChannel == "" {
+		*SuggestionChannel = os.Getenv("DISCORD_SUGGESTION_CHANNEL")
 	}
 }
 

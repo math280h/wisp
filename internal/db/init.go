@@ -47,4 +47,27 @@ func InitDb() {
 	if err != nil {
 		panic(err)
 	}
+
+	_, err = DBClient.Exec(`CREATE TABLE IF NOT EXISTS suggestions (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		embed_id TEXT,
+		suggestion TEXT,
+		user_id TEXT,
+		status TEXT NOT NULL CHECK(status IN ('pending', 'approved', 'denied')),
+		created_at TEXT DEFAULT CURRENT_TIMESTAMP
+	)`)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = DBClient.Exec(`CREATE TABLE IF NOT EXISTS suggestion_votes (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		suggestion_id INTEGER,
+		user_id TEXT,
+		sentiment TEXT NOT NULL CHECK(sentiment IN ('upvote', 'downvote')),
+		created_at TEXT DEFAULT CURRENT_TIMESTAMP
+	)`)
+	if err != nil {
+		panic(err)
+	}
 }

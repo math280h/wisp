@@ -26,6 +26,12 @@
     - When a user is banned, they are given 100% of the threshold points
     - When a user is kicked, they are given 50% of the threshold points
   - Ban and kick reasons are logged
+- Suggestions
+  - Users can make suggestions to the server
+  - All users that can view the suggestions channel can vote on suggestions
+    - Users can only vote once per suggestion
+  - Suggestions can be marked as Accepted or Denied
+    - Users with Administator permissions can mark suggestions as completed (TBD if the permission will be configurable)
 
 ### Coming Soon
 
