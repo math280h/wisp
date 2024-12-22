@@ -33,13 +33,6 @@
   - Suggestions can be marked as Accepted or Denied
     - Users with Administator permissions can mark suggestions as completed (TBD if the permission will be configurable)
 
-### Coming Soon
-
-- Moderation
-  - Mute
-  - Unmute
-  - Clear
-
 ## Getting Started
 
 Create a new bot on the [Discord Developer Portal](https://discord.com/developers/applications) and invite it to your server.
