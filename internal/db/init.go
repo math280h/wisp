@@ -5,14 +5,14 @@ import (
 	"log"
 )
 
-var DBClient *sql.DB
+var DBClient *sql.DB //nolint:gochecknoglobals // This is the database client
 
-func InitDb() {
-	new_db, err := sql.Open("sqlite3", "./wisp.db")
+func InitDB() {
+	newDB, err := sql.Open("sqlite3", "./wisp.db")
 	if err != nil {
 		log.Fatal(err)
 	}
-	DBClient = new_db
+	DBClient = newDB
 
 	_, err = DBClient.Exec(`CREATE TABLE IF NOT EXISTS reports (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,

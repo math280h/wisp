@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
-	"regexp"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -19,30 +17,14 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var s *discordgo.Session
-
-func init() { shared.Init() }
-
-func init() {
-	var err error
-	s, err = discordgo.New("Bot " + *shared.BotToken)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Invalid bot parameters")
-	}
-
-	db.InitDb()
-
-	if *shared.PrettyLogs {
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	}
-}
+var s *discordgo.Session //nolint:gochecknoglobals // This is the Discord session
 
 func int64Ptr(i int64) *int64 {
 	return &i
 }
 
 var (
-	commands = []*discordgo.ApplicationCommand{
+	commands = []*discordgo.ApplicationCommand{ //nolint:gochecknoglobals // This is a list of commands for Discord
 		{
 			Name:                     "suggest",
 			Description:              "Suggest something for the server",
@@ -184,9 +166,50 @@ var (
 				},
 			},
 		},
+		{
+			Name:                     "detain",
+			Description:              "Detain the user",
+			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "The user to detain",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "reason",
+					Description: "The reason for the detainment",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:                     "release",
+			Description:              "Release the user",
+			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "The user to release",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "reason",
+					Description: "The reason for the release",
+					Required:    true,
+				},
+			},
+		},
 	}
 
-	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
+	commandHandlers = map[string]func( //nolint:gochecknoglobals // This is a map of commands to their handlers
+		s *discordgo.Session,
+		i *discordgo.InteractionCreate,
+	){
 		"close":             reports.Close,
 		"archive":           reports.Archive,
 		"warn":              moderation.WarnCommand,
@@ -194,10 +217,28 @@ var (
 		"info":              moderation.InfoCommand,
 		"suggest":           suggestions.CreateSuggestionCommand,
 		"suggestion-status": suggestions.SetSuggestionStatusCommand,
+		"detain":            moderation.DetainUserCommand,
+		"release":           moderation.ReleaseUserCommand,
 	}
 )
 
-func init() {
+func main() {
+	shared.Init()
+
+	var err error
+	s, err = discordgo.New("Bot " + *shared.BotToken)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Invalid bot parameters")
+	}
+
+	db.InitDB()
+
+	if *shared.PrettyLogs {
+		log.Logger = log.Output( //nolint:reassign // This only changes if the user prefers JSON over PrettyLogs
+			zerolog.ConsoleWriter{Out: os.Stderr},
+		)
+	}
+
 	s.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if i.Type == discordgo.InteractionApplicationCommand {
 			// Make sure it's an application command (e.g., /mycommand)
@@ -207,13 +248,10 @@ func init() {
 			return
 		}
 	})
-}
-
-func main() {
-	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+	s.AddHandler(func(s *discordgo.Session, _ *discordgo.Ready) {
 		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
 	})
-	err := s.Open()
+	err = s.Open()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Cannot open the session")
 	}
@@ -225,7 +263,8 @@ func main() {
 	log.Debug().Msg("Adding commands...")
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 	for i, v := range commands {
-		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, *shared.GuildID, v)
+		var cmd *discordgo.ApplicationCommand
+		cmd, err = s.ApplicationCommandCreate(s.State.User.ID, *shared.GuildID, v)
 		if err != nil {
 			log.Fatal().Err(err).Msgf("Cannot create '%v' command", v.Name)
 		}
@@ -251,7 +290,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if m.GuildID != "" {
+	if m.GuildID != "" { //nolint:nestif // This is required to know how to handle the message
 		// Check if message is from a report channel
 		// If it is, send the message to the user
 		// If it isn't, ignore the message
@@ -265,12 +304,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		if channel.ParentID == *shared.ReportCategory {
-
-			userId, _ := db.GetReportByChannelID(m.ChannelID)
-			log.Debug().Msg("Message is to user: " + userId)
-			userChannel, err := s.UserChannelCreate(userId)
-			if err != nil {
-				log.Error().Err(err).Msg("Error creating user channel")
+			userID, _ := db.GetReportByChannelID(m.ChannelID)
+			log.Debug().Msg("Message is to user: " + userID)
+			userChannel, usrChnlErr := s.UserChannelCreate(userID)
+			if usrChnlErr != nil {
+				log.Error().Err(usrChnlErr).Msg("Error creating user channel")
 				return
 			}
 
@@ -286,49 +324,5 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	log.Debug().Msg("Incoming message from user:" + m.Author.ID)
 
-	// Check if the channel exists in the specified category
-	expectedChannelName := m.Author.Username
-	// Remove any special characters from the channel name
-	re := regexp.MustCompile("[^a-zA-Z0-9]+")
-	expectedChannelName = re.ReplaceAllString(expectedChannelName, "")
-
-	db.CreateUserIfNotExist(m.Author.ID, m.Author.Username)
-
-	channelExists := false
-	channelId, channelName := db.GetReportByUserID(m.Author.ID)
-	if channelName != "" {
-		channelExists = true
-	}
-
-	if !channelExists {
-		// Create a new channel in the specified category
-		_, err := reports.CreateReportChannel(expectedChannelName, s, m)
-		if err != nil {
-			_, err = s.ChannelMessageSend(m.ChannelID, "There was an error sending your message. Please try again.")
-			if err != nil {
-				log.Error().Err(err).Msg("Error sending message to channel " + m.ChannelID)
-			}
-		}
-	} else {
-		log.Debug().Msg("Open channel found, sending message to channel")
-		// Send the users message to the channel
-		_, err := s.ChannelMessageSend(channelId, m.Content)
-		if err != nil {
-			log.Error().Err(err).Msg("Error sending message to channel " + channelId)
-
-			// If the error message contains Unknown Channel, attempt to create a new channel
-			if fmt.Sprint(err) == "HTTP 404 Not Found, {\"message\": \"Unknown Channel\", \"code\": 10003}" {
-				log.Debug().Msg("Channel not found, attempting to creating new channel")
-
-				_, err := reports.CreateReportChannel(expectedChannelName, s, m)
-				if err != nil {
-					_, err = s.ChannelMessageSend(m.ChannelID, "There was an error sending your message. Please try again.")
-					if err != nil {
-						log.Error().Err(err).Msg("Error sending message to channel " + m.ChannelID)
-					}
-				}
-			}
-			return
-		}
-	}
+	reports.OpenReport(s, m.ChannelID, m.Author.ID, m.Author.Username, m.Content, m.Author.AvatarURL("256x256"), false)
 }

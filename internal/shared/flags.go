@@ -11,30 +11,31 @@ import (
 )
 
 var (
-	BotToken       = flag.String("token", "", "Bot access token")
-	GuildID        = flag.String("guild", "", "Guild ID")
-	ReportCategory = flag.String("category", "", "Category ID")
-	ArchiveChannel = flag.String("archive", "", "Archive channel ID")
-	LogChannel     = flag.String("log", "", "Log channel ID")
-	AlertChannel   = flag.String("alert", "", "Alert channel ID")
-	PrettyLogs     = flag.Bool("pretty", false, "Pretty logs")
+	BotToken       = flag.String("token", "", "Bot access token")     //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	GuildID        = flag.String("guild", "", "Guild ID")             //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	ReportCategory = flag.String("category", "", "Category ID")       //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	ArchiveChannel = flag.String("archive", "", "Archive channel ID") //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	LogChannel     = flag.String("log", "", "Log channel ID")         //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	AlertChannel   = flag.String("alert", "", "Alert channel ID")     //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	MutedRole      = flag.String("muted", "", "Muted role ID")        //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	PrettyLogs     = flag.Bool("pretty", false, "Pretty logs")        //nolint:gochecknoglobals,lll // This is a flag shared across the application
 
-	// Moderation Settings
-	WarnPoints   = flag.Int("warnpoints", 10, "Number of points to warn a user")
-	StrikePoints = flag.Int("strikepoints", 50, "Number of points to strike a user")
-	MaxPoints    = flag.Int("maxpoints", 100, "Number of points to ban a user")
+	// Moderation Settings.
+	WarnPoints   = flag.Int("warnpoints", 10, "Number of points to warn a user")     //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	StrikePoints = flag.Int("strikepoints", 50, "Number of points to strike a user") //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	MaxPoints    = flag.Int("maxpoints", 100, "Number of points to ban a user")      //nolint:gochecknoglobals,lll // This is a flag shared across the application
 
-	// Suggestions
-	SuggestionChannel = flag.String("suggestion", "", "Suggestion channel ID")
+	// Suggestions.
+	SuggestionChannel = flag.String("suggestion", "", "Suggestion channel ID") //nolint:gochecknoglobals,lll // This is a flag shared across the application
 )
 
-var GuildName string = "Unknown"
+var GuildName = "Unknown" //nolint:gochecknoglobals // This is the name of the guild
 
-func Init() {
+func Init() { //nolint:gocognit // This function is responsible for initializing the shared flags
 	flag.Parse()
 
-	env_err := godotenv.Load()
-	if env_err != nil {
+	envErr := godotenv.Load()
+	if envErr != nil {
 		log.Fatal("Error loading .env file")
 	}
 
@@ -62,10 +63,14 @@ func Init() {
 	if *AlertChannel == "" {
 		*AlertChannel = os.Getenv("DISCORD_GUILD_ALERT_CHANNEL")
 	}
+	// If MutedRole is not provided, use the one from the .env file
+	if *MutedRole == "" {
+		*MutedRole = os.Getenv("DISCORD_GUILD_MUTED_ROLE")
+	}
 	// If PrettyLogs is not provided, use the one from the .env file
 	if !*PrettyLogs {
-		pretty_logs := os.Getenv("PRETTY_LOGS")
-		if pretty_logs == "true" {
+		envPrettyLogs := os.Getenv("PRETTY_LOGS")
+		if envPrettyLogs == "true" {
 			*PrettyLogs = true
 		}
 	}
@@ -74,23 +79,23 @@ func Init() {
 
 	// If WarnPoints is not provided, use the one from the .env file
 	if *WarnPoints == 10 {
-		warn_points := os.Getenv("WARN_POINTS")
-		if warn_points != "" {
-			*WarnPoints, _ = strconv.Atoi(warn_points)
+		envWarnPoints := os.Getenv("WARN_POINTS")
+		if envWarnPoints != "" {
+			*WarnPoints, _ = strconv.Atoi(envWarnPoints)
 		}
 	}
 	// If StrikePoints is not provided, use the one from the .env file
 	if *StrikePoints == 50 {
-		strike_points := os.Getenv("STRIKE_POINTS")
-		if strike_points != "" {
-			*StrikePoints, _ = strconv.Atoi(strike_points)
+		envStrikePoints := os.Getenv("STRIKE_POINTS")
+		if envStrikePoints != "" {
+			*StrikePoints, _ = strconv.Atoi(envStrikePoints)
 		}
 	}
 	// If MaxPoints is not provided, use the one from the .env file
 	if *MaxPoints == 100 {
-		max_points := os.Getenv("MAX_POINTS")
-		if max_points != "" {
-			*MaxPoints, _ = strconv.Atoi(max_points)
+		envMaxPoints := os.Getenv("MAX_POINTS")
+		if envMaxPoints != "" {
+			*MaxPoints, _ = strconv.Atoi(envMaxPoints)
 		}
 	}
 

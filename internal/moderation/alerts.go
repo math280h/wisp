@@ -13,7 +13,7 @@ func AlertHandler(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 		log.Debug().Msg("User reacted with 🛑")
 
 		embed := &discordgo.MessageEmbed{
-			Color:       0xe74c3c,
+			Color:       shared.Red,
 			Title:       "Alert",
 			Description: "A user has reacted with 🛑 to this message",
 			Fields: []*discordgo.MessageEmbedField{

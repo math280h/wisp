@@ -7,7 +7,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func addPointsToUser(userID string, pointsValue int) (current_points int, over bool) {
+func addPointsToUser(userID string, pointsValue int) (int, bool) {
 	rows, err := db.DBClient.Query("SELECT points FROM users WHERE user_id = ?", userID)
 	if err != nil {
 		panic(err)
@@ -36,18 +36,28 @@ func addPointsToUser(userID string, pointsValue int) (current_points int, over b
 }
 
 func addWarnEntry(userID string, reason string, moderatorID string) {
-	_, err := db.DBClient.Exec("INSERT INTO warns (user_id, reason, moderator_id) VALUES (?, ?, ?)", userID, reason, moderatorID)
+	_, err := db.DBClient.Exec(
+		"INSERT INTO warns (user_id, reason, moderator_id) VALUES (?, ?, ?)",
+		userID,
+		reason,
+		moderatorID,
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func Warn(userID string, reason string, moderator_id string, s *discordgo.Session) int {
+func Warn(userID string, reason string, moderatorID string, s *discordgo.Session) int {
 	points, isOverLimit := addPointsToUser(userID, *shared.WarnPoints)
-	addWarnEntry(userID, reason, moderator_id)
+	addWarnEntry(userID, reason, moderatorID)
 
 	if isOverLimit {
-		err := s.GuildBanCreateWithReason(*shared.GuildID, userID, "User has exceeded the maximum amount of warning points", 0)
+		err := s.GuildBanCreateWithReason(
+			*shared.GuildID,
+			userID,
+			"User has exceeded the maximum amount of warning points",
+			0,
+		)
 		if err != nil {
 			panic(err)
 		}
@@ -56,12 +66,17 @@ func Warn(userID string, reason string, moderator_id string, s *discordgo.Sessio
 	return points
 }
 
-func Strike(userID string, reason string, moderator_id string, s *discordgo.Session) int {
+func Strike(userID string, reason string, moderatorID string, s *discordgo.Session) int {
 	points, isOverLimit := addPointsToUser(userID, *shared.StrikePoints)
-	addWarnEntry(userID, reason, moderator_id)
+	addWarnEntry(userID, reason, moderatorID)
 
 	if isOverLimit {
-		err := s.GuildBanCreateWithReason(*shared.GuildID, userID, "User has exceeded the maximum amount of warning points", 0)
+		err := s.GuildBanCreateWithReason(
+			*shared.GuildID,
+			userID,
+			"User has exceeded the maximum amount of warning points",
+			0,
+		)
 		if err != nil {
 			panic(err)
 		}
@@ -70,12 +85,17 @@ func Strike(userID string, reason string, moderator_id string, s *discordgo.Sess
 	return points
 }
 
-func Kick(userID string, reason string, moderator_id string, s *discordgo.Session) int {
+func Kick(userID string, reason string, moderatorID string, s *discordgo.Session) int {
 	points, isOverLimit := addPointsToUser(userID, *shared.MaxPoints/2)
-	addWarnEntry(userID, reason, moderator_id)
+	addWarnEntry(userID, reason, moderatorID)
 
 	if isOverLimit {
-		err := s.GuildBanCreateWithReason(*shared.GuildID, userID, "User has exceeded the maximum amount of warning points", 0)
+		err := s.GuildBanCreateWithReason(
+			*shared.GuildID,
+			userID,
+			"User has exceeded the maximum amount of warning points",
+			0,
+		)
 		if err != nil {
 			panic(err)
 		}
@@ -89,12 +109,17 @@ func Kick(userID string, reason string, moderator_id string, s *discordgo.Sessio
 	return points
 }
 
-func Ban(userID string, reason string, moderator_id string, s *discordgo.Session) int {
+func Ban(userID string, reason string, moderatorID string, s *discordgo.Session) int {
 	points, isOverLimit := addPointsToUser(userID, *shared.MaxPoints)
-	addWarnEntry(userID, reason, moderator_id)
+	addWarnEntry(userID, reason, moderatorID)
 
 	if isOverLimit {
-		err := s.GuildBanCreateWithReason(*shared.GuildID, userID, "User has exceeded the maximum amount of warning points", 0)
+		err := s.GuildBanCreateWithReason(
+			*shared.GuildID,
+			userID,
+			"User has exceeded the maximum amount of warning points",
+			0,
+		)
 		if err != nil {
 			panic(err)
 		}

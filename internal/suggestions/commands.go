@@ -1,7 +1,6 @@
 package suggestions
 
 import (
-	"fmt"
 	"math280h/wisp/internal/db"
 	"math280h/wisp/internal/shared"
 	"strconv"
@@ -62,8 +61,8 @@ func CreateSuggestionCommand(s *discordgo.Session, i *discordgo.InteractionCreat
 	suggestion := i.ApplicationCommandData().Options[0].StringValue()
 
 	// Inform the user that their suggestion has been created
-	suggestion_id := db.CreateSuggestion(i.Member.User.ID, suggestion)
-	embed := getSuggestionEmbed(suggestion_id, 0, 0, suggestion, i.Member.User.ID)
+	suggestionID := db.CreateSuggestion(i.Member.User.ID, suggestion)
+	embed := getSuggestionEmbed(suggestionID, 0, 0, suggestion, i.Member.User.ID)
 
 	buttons := []discordgo.MessageComponent{
 		discordgo.ActionsRow{
@@ -71,7 +70,7 @@ func CreateSuggestionCommand(s *discordgo.Session, i *discordgo.InteractionCreat
 				discordgo.Button{
 					Label:    "Up",
 					Style:    discordgo.PrimaryButton,
-					CustomID: "vote_up:" + strconv.Itoa(suggestion_id),
+					CustomID: "vote_up:" + strconv.Itoa(suggestionID),
 					Emoji: &discordgo.ComponentEmoji{
 						Name: "⬆️",
 					},
@@ -79,7 +78,7 @@ func CreateSuggestionCommand(s *discordgo.Session, i *discordgo.InteractionCreat
 				discordgo.Button{
 					Label:    "Down",
 					Style:    discordgo.DangerButton,
-					CustomID: "vote_down:" + strconv.Itoa(suggestion_id),
+					CustomID: "vote_down:" + strconv.Itoa(suggestionID),
 					Emoji: &discordgo.ComponentEmoji{
 						Name: "⬇️",
 					},
@@ -108,7 +107,7 @@ func CreateSuggestionCommand(s *discordgo.Session, i *discordgo.InteractionCreat
 		return
 	}
 
-	db.SetSuggestionEmbedID(suggestion_id, suggestionMessage.ID)
+	db.SetSuggestionEmbedID(suggestionID, suggestionMessage.ID)
 
 	// Respond to the command
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -125,9 +124,9 @@ func CreateSuggestionCommand(s *discordgo.Session, i *discordgo.InteractionCreat
 
 func SetSuggestionStatusCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	// Get suggestion ID
-	suggestion_id := i.ApplicationCommandData().Options[0].IntValue()
+	suggestionID := i.ApplicationCommandData().Options[0].IntValue()
 	// Convert int64 to int
-	suggestion_id_int := int(suggestion_id)
+	suggestionIDInt := int(suggestionID)
 	// Get status
 	status := i.ApplicationCommandData().Options[1].StringValue()
 
@@ -147,9 +146,9 @@ func SetSuggestionStatusCommand(s *discordgo.Session, i *discordgo.InteractionCr
 	}
 
 	// Get the suggestion embed
-	embed_id, suggestion_user, suggestion_message := db.GetSuggestionByID(suggestion_id_int)
+	embedID, suggestionUser, suggestionMessage := db.GetSuggestionByID(suggestionIDInt)
 
-	db.SetSuggestionStatus(suggestion_id_int, status)
+	db.SetSuggestionStatus(suggestionIDInt, status)
 
 	// Set color and title
 	var color int
@@ -171,11 +170,11 @@ func SetSuggestionStatusCommand(s *discordgo.Session, i *discordgo.InteractionCr
 		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:  "Created By",
-				Value: "<@" + suggestion_user + ">",
+				Value: "<@" + suggestionUser + ">",
 			},
 			{
 				Name:   "Suggestion",
-				Value:  suggestion_message,
+				Value:  suggestionMessage,
 				Inline: true,
 			},
 		},
@@ -184,12 +183,12 @@ func SetSuggestionStatusCommand(s *discordgo.Session, i *discordgo.InteractionCr
 	// Remove buttons from the suggestion
 	_, err := s.ChannelMessageEditComplex(&discordgo.MessageEdit{
 		Channel:    *shared.SuggestionChannel,
-		ID:         embed_id,
+		ID:         embedID,
 		Embeds:     &[]*discordgo.MessageEmbed{embed},
 		Components: &[]discordgo.MessageComponent{},
 	})
 	if err != nil {
-		fmt.Println("Error removing buttons:", err)
+		log.Error().Err(err).Msg("Failed to edit suggestion embed")
 	}
 
 	// Respond to the command
