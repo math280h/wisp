@@ -37,7 +37,7 @@
   - Suggestions can be marked as Accepted or Denied
     - Users with Administator permissions can mark suggestions as completed (TBD if the permission will be configurable)
 - Report Messages
-  - Users can report messages by reacting to them with the :octagonal_sign: emoji
+  - Users can report messages by reacting to them with the :octagonal_sign: (🛑) emoji
   - Moderators will get an alert in the alerting channel with a link to the message.
 
 ## Getting Started
