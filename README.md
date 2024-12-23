@@ -5,7 +5,9 @@
     Wisp
 </h1>
 <p align="center">
-  Wisp is a simple, lightweight moderation bot for Discord. It is designed to be easy to use and easy to set up.
+  Wisp is a Discord bot that helps moderate servers. Wisp is designed to be easy to use and easy to configure.
+
+  Wisp is also fully open source and can be self-hosted by anyone. (No more sketchy bots!)
 </p>
 
 ## Features
