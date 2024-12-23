@@ -16,6 +16,7 @@ var (
 	ReportCategory = flag.String("category", "", "Category ID")
 	ArchiveChannel = flag.String("archive", "", "Archive channel ID")
 	LogChannel     = flag.String("log", "", "Log channel ID")
+	AlertChannel   = flag.String("alert", "", "Alert channel ID")
 	PrettyLogs     = flag.Bool("pretty", false, "Pretty logs")
 
 	// Moderation Settings
@@ -56,6 +57,10 @@ func Init() {
 	// If LogChannel is not provided, use the one from the .env file
 	if *LogChannel == "" {
 		*LogChannel = os.Getenv("DISCORD_GUILD_LOG_CHANNEL")
+	}
+	// If AlertChannel is not provided, use the one from the .env file
+	if *AlertChannel == "" {
+		*AlertChannel = os.Getenv("DISCORD_GUILD_ALERT_CHANNEL")
 	}
 	// If PrettyLogs is not provided, use the one from the .env file
 	if !*PrettyLogs {

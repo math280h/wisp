@@ -220,6 +220,8 @@ func main() {
 
 	s.AddHandler(messageCreate)
 	s.AddHandler(suggestions.UpvoteSuggestion)
+	s.AddHandler(moderation.AlertHandler)
+
 	log.Debug().Msg("Adding commands...")
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 	for i, v := range commands {
