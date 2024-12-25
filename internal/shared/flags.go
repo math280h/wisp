@@ -11,14 +11,21 @@ import (
 )
 
 var (
-	BotToken       = flag.String("token", "", "Bot access token")     //nolint:gochecknoglobals,lll // This is a flag shared across the application
-	GuildID        = flag.String("guild", "", "Guild ID")             //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	BotToken = flag.String("token", "", "Bot access token") //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	GuildID  = flag.String("guild", "", "Guild ID")         //nolint:gochecknoglobals,lll // This is a flag shared across the application
+
+	// Channels.
 	ReportCategory = flag.String("category", "", "Category ID")       //nolint:gochecknoglobals,lll // This is a flag shared across the application
 	ArchiveChannel = flag.String("archive", "", "Archive channel ID") //nolint:gochecknoglobals,lll // This is a flag shared across the application
 	LogChannel     = flag.String("log", "", "Log channel ID")         //nolint:gochecknoglobals,lll // This is a flag shared across the application
 	AlertChannel   = flag.String("alert", "", "Alert channel ID")     //nolint:gochecknoglobals,lll // This is a flag shared across the application
-	MutedRole      = flag.String("muted", "", "Muted role ID")        //nolint:gochecknoglobals,lll // This is a flag shared across the application
-	PrettyLogs     = flag.Bool("pretty", false, "Pretty logs")        //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	HistoryChannel = flag.String("history", "", "History channel ID") //nolint:gochecknoglobals,lll // This is a flag shared across the application
+
+	// Roles.
+	MutedRole = flag.String("muted", "", "Muted role ID") //nolint:gochecknoglobals,lll // This is a flag shared across the application
+
+	// Logging.
+	PrettyLogs = flag.Bool("pretty", false, "Pretty logs") //nolint:gochecknoglobals,lll // This is a flag shared across the application
 
 	// Moderation Settings.
 	WarnPoints   = flag.Int("warnpoints", 10, "Number of points to warn a user")     //nolint:gochecknoglobals,lll // This is a flag shared across the application
@@ -62,6 +69,10 @@ func Init() { //nolint:gocognit // This function is responsible for initializing
 	// If AlertChannel is not provided, use the one from the .env file
 	if *AlertChannel == "" {
 		*AlertChannel = os.Getenv("DISCORD_GUILD_ALERT_CHANNEL")
+	}
+	// If HistoryChannel is not provided, use the one from the .env file
+	if *HistoryChannel == "" {
+		*HistoryChannel = os.Getenv("DISCORD_GUILD_HISTORY_CHANNEL")
 	}
 	// If MutedRole is not provided, use the one from the .env file
 	if *MutedRole == "" {

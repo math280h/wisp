@@ -70,4 +70,17 @@ func InitDB() {
 	if err != nil {
 		panic(err)
 	}
+
+	_, err = DBClient.Exec(`CREATE TABLE IF NOT EXISTS messages (
+		id TEXT PRIMARY KEY,
+		content TEXT,
+		author_id TEXT,
+		author_tag TEXT,
+		timestamp TEXT,
+		channel_id TEXT,
+		created_at TEXT DEFAULT CURRENT_TIMESTAMP
+	)`)
+	if err != nil {
+		panic(err)
+	}
 }

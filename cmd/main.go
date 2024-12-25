@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"math280h/wisp/internal/db"
+	"math280h/wisp/internal/history"
 	"math280h/wisp/internal/moderation"
 	"math280h/wisp/internal/reports"
 	"math280h/wisp/internal/shared"
@@ -231,6 +232,11 @@ func main() {
 		log.Fatal().Err(err).Msg("Invalid bot parameters")
 	}
 
+	s.Identify.Intents = discordgo.IntentsGuildMessages |
+		discordgo.IntentsDirectMessages |
+		discordgo.IntentsGuildMembers |
+		discordgo.IntentMessageContent
+
 	db.InitDB()
 
 	if *shared.PrettyLogs {
@@ -260,6 +266,11 @@ func main() {
 	s.AddHandler(suggestions.UpvoteSuggestion)
 	s.AddHandler(moderation.AlertHandler)
 
+	// History handlers
+	s.AddHandler(history.OnGuildMemberUpdate)
+	s.AddHandler(history.OnMessageDelete)
+	s.AddHandler(history.OnMessageUpdate)
+
 	log.Debug().Msg("Adding commands...")
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 	for i, v := range commands {
@@ -270,8 +281,6 @@ func main() {
 		}
 		registeredCommands[i] = cmd
 	}
-
-	s.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentsDirectMessages
 
 	defer s.Close()
 
@@ -318,11 +327,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				log.Error().Err(err).Msg("Error sending message")
 				return
 			}
+		} else {
+			db.CreateMessage(m.ID, m.Content, m.Author.ID, m.Author.Mention(), m.Timestamp.String(), m.ChannelID)
 		}
 		return
 	}
 
 	log.Debug().Msg("Incoming message from user:" + m.Author.ID)
-
 	reports.OpenReport(s, m.ChannelID, m.Author.ID, m.Author.Username, m.Content, m.Author.AvatarURL("256x256"), false)
 }
