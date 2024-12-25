@@ -42,6 +42,9 @@
 - Report Messages
   - Users can report messages by reacting to them with the :octagonal_sign: (🛑) emoji
   - Moderators will get an alert in the alerting channel with a link to the message.
+- Message Logs
+  - When a message is edited an embed containing the original message and the new message is sent to the message logs channel
+  - When a message is deleted an embed containing the deleted message is sent to the message logs channel
 
 ## Getting Started
 
