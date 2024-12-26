@@ -12,6 +12,10 @@
     Wisp is also fully open source and can be self-hosted by anyone. (No more sketchy bots!)
 </p>
 
+<p align="center">
+  <img src="https://github.com/math280h/wisp/actions/workflows/pr.yaml/badge.svg" />
+</p>
+
 ## Features
 
 - Reports

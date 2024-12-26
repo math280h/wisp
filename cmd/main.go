@@ -1,4 +1,4 @@
-package main
+package main //nolint:cyclop // Complexity is high due to number of commands, this can maybe be refactored in the future
 
 import (
 	"os"
@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"math280h/wisp/internal/core"
 	"math280h/wisp/internal/db"
 	"math280h/wisp/internal/history"
 	"math280h/wisp/internal/moderation"
@@ -89,9 +90,9 @@ func main() {
 	}
 
 	// Add interaction handlers, this might be messages, reactions etc... but not slash commands
-	s.AddHandler(messageCreate)
-	s.AddHandler(suggestions.UpvoteSuggestion)
+	s.AddHandler(core.HandleIncomingMessages)
 	s.AddHandler(moderation.AlertHandler)
+	s.AddHandler(suggestions.SuggestionVote)
 
 	// History handlers
 	if *shared.MessageHistoryEnabled {
@@ -125,48 +126,4 @@ func main() {
 	signal.Notify(stop, os.Interrupt)
 	log.Info().Msg("Bot is now running. Press CTRL+C to exit.")
 	<-stop
-}
-
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-
-	if m.GuildID != "" { //nolint:nestif // This is required to know how to handle the message
-		// Check if message is from a report channel
-		// If it is, send the message to the user
-		// If it isn't, ignore the message
-		log.Debug().Msg("Incoming message from guild: " + m.GuildID)
-
-		// Check if channel has category as parent
-		channel, err := s.Channel(m.ChannelID)
-		if err != nil {
-			log.Error().Err(err).Msg("Error fetching channel")
-			return
-		}
-
-		if channel.ParentID == *shared.ReportCategory {
-			userID, _ := db.GetReportByChannelID(m.ChannelID)
-			log.Debug().Msg("Message is to user: " + userID)
-			userChannel, usrChnlErr := s.UserChannelCreate(userID)
-			if usrChnlErr != nil {
-				log.Error().Err(usrChnlErr).Msg("Error creating user channel")
-				return
-			}
-
-			// Send the users message to the channel
-			_, err = s.ChannelMessageSend(userChannel.ID, m.Content)
-			if err != nil {
-				log.Error().Err(err).Msg("Error sending message")
-				return
-			}
-		} else {
-			db.CreateMessage(m.ID, m.Content, m.Author.ID, m.Author.Mention(), m.Timestamp.String(), m.ChannelID)
-		}
-		return
-	}
-
-	log.Debug().Msg("Incoming message from user:" + m.Author.ID)
-	reports.OpenReport(s, m.ChannelID, m.Author.ID, m.Author.Username, m.Content, m.Author.AvatarURL("256x256"), false)
 }

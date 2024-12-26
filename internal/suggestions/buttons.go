@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func UpvoteSuggestion(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func SuggestionVote(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if i.Type != discordgo.InteractionMessageComponent {
 		return
 	}
