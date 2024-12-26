@@ -52,9 +52,14 @@ Create a new bot on the [Discord Developer Portal](https://discord.com/developer
 
 ### Running the docker container
 
-**Note:** See .env.example for environment variables
-
-<!-- TODO:: Get actual link for docker image -->
 ```bash
 docker run -d --env-file .env ghcr.io/math280h/wisp/wisp:latest
 ```
+
+## Configuration
+
+Wisp can be configured either through parameters passed to the bot or through environment variables.
+
+You can find all env variables in the [.env.example](.env.example) file.
+
+You can find all command line arguments [flags.go](internal/shared/flags.go)

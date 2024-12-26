@@ -20,211 +20,33 @@ import (
 
 var s *discordgo.Session //nolint:gochecknoglobals // This is the Discord session
 
-func int64Ptr(i int64) *int64 {
-	return &i
-}
-
 var (
-	commands = []*discordgo.ApplicationCommand{ //nolint:gochecknoglobals // This is a list of commands for Discord
-		{
-			Name:                     "suggest",
-			Description:              "Suggest something for the server",
-			DefaultMemberPermissions: int64Ptr(discordgo.PermissionViewChannel),
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "suggestion",
-					Description: "The suggestion",
-					Required:    true,
-				},
-			},
-		},
-		{
-			Name:                     "suggestion-status",
-			Description:              "Set the status of a suggestion",
-			DefaultMemberPermissions: int64Ptr(discordgo.PermissionAdministrator),
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionInteger,
-					Name:        "suggestion_id",
-					Description: "The ID of the suggestion",
-					Required:    true,
-				},
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "status",
-					Description: "The status of the suggestion",
-					Required:    true,
-					Choices: []*discordgo.ApplicationCommandOptionChoice{
-						{
-							Name:  "Approved",
-							Value: "approved",
-						},
-						{
-							Name:  "Denied",
-							Value: "denied",
-						},
-					},
-				},
-			},
-		},
-		{
-			Name:                     "close",
-			Description:              "Close the report",
-			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
-		},
-		{
-			Name:                     "archive",
-			Description:              "Archive the report",
-			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
-		},
-		{
-			Name:                     "warn",
-			Description:              "Warn the user",
-			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionUser,
-					Name:        "user",
-					Description: "The user to warn",
-					Required:    true,
-				},
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "reason",
-					Description: "The reason for the warning",
-					Required:    true,
-				},
-			},
-		},
-		{
-			Name:                     "strike",
-			Description:              "Strike the user",
-			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionUser,
-					Name:        "user",
-					Description: "The user to strike",
-					Required:    true,
-				},
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "reason",
-					Description: "The reason for the strike",
-					Required:    true,
-				},
-			},
-		},
-		{
-			Name:                     "kick",
-			Description:              "Kick the user",
-			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionUser,
-					Name:        "user",
-					Description: "The user to kick",
-					Required:    true,
-				},
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "reason",
-					Description: "The reason for the kick",
-					Required:    true,
-				},
-			},
-		},
-		{
-			Name:                     "ban",
-			Description:              "Ban the user",
-			DefaultMemberPermissions: int64Ptr(discordgo.PermissionBanMembers),
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionUser,
-					Name:        "user",
-					Description: "The user to ban",
-					Required:    true,
-				},
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "reason",
-					Description: "The reason for the ban",
-					Required:    true,
-				},
-			},
-		},
-		{
-			Name:                     "info",
-			Description:              "Get information about a user",
-			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionUser,
-					Name:        "user",
-					Description: "The user to get information about",
-					Required:    true,
-				},
-			},
-		},
-		{
-			Name:                     "detain",
-			Description:              "Detain the user",
-			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionUser,
-					Name:        "user",
-					Description: "The user to detain",
-					Required:    true,
-				},
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "reason",
-					Description: "The reason for the detainment",
-					Required:    true,
-				},
-			},
-		},
-		{
-			Name:                     "release",
-			Description:              "Release the user",
-			DefaultMemberPermissions: int64Ptr(discordgo.PermissionKickMembers),
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionUser,
-					Name:        "user",
-					Description: "The user to release",
-					Required:    true,
-				},
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "reason",
-					Description: "The reason for the release",
-					Required:    true,
-				},
-			},
-		},
-	}
+	commands = []*discordgo.ApplicationCommand{} //nolint:gochecknoglobals // This is a list of commands for Discord
 
 	commandHandlers = map[string]func( //nolint:gochecknoglobals // This is a map of commands to their handlers
 		s *discordgo.Session,
 		i *discordgo.InteractionCreate,
-	){
-		"close":             reports.Close,
-		"archive":           reports.Archive,
-		"warn":              moderation.WarnCommand,
-		"strike":            moderation.StrikeCommand,
-		"info":              moderation.InfoCommand,
-		"suggest":           suggestions.CreateSuggestionCommand,
-		"suggestion-status": suggestions.SetSuggestionStatusCommand,
-		"detain":            moderation.DetainUserCommand,
-		"release":           moderation.ReleaseUserCommand,
-	}
+	){}
 )
 
 func main() {
 	shared.Init()
+
+	// Add moderation commands
+	commands = append(commands, moderation.Commands...)
+	for k, v := range moderation.CommandHandlers {
+		commandHandlers[k] = v
+	}
+	// Add Suggestions commands
+	commands = append(commands, suggestions.Commands...)
+	for k, v := range suggestions.CommandHandlers {
+		commandHandlers[k] = v
+	}
+	// Add Report commands
+	commands = append(commands, reports.Commands...)
+	for k, v := range reports.CommandHandlers {
+		commandHandlers[k] = v
+	}
 
 	var err error
 	s, err = discordgo.New("Bot " + *shared.BotToken)
@@ -245,6 +67,7 @@ func main() {
 		)
 	}
 
+	// Add a handler for the interactionCreate event that will call the appropriate command handler
 	s.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if i.Type == discordgo.InteractionApplicationCommand {
 			// Make sure it's an application command (e.g., /mycommand)
@@ -254,23 +77,32 @@ func main() {
 			return
 		}
 	})
+	// Simply ready message when the bot is ready
 	s.AddHandler(func(s *discordgo.Session, _ *discordgo.Ready) {
 		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
 	})
+
+	// Open the session to begin listening for events
 	err = s.Open()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Cannot open the session")
 	}
 
+	// Add interaction handlers, this might be messages, reactions etc... but not slash commands
 	s.AddHandler(messageCreate)
 	s.AddHandler(suggestions.UpvoteSuggestion)
 	s.AddHandler(moderation.AlertHandler)
 
 	// History handlers
-	s.AddHandler(history.OnGuildMemberUpdate)
-	s.AddHandler(history.OnMessageDelete)
-	s.AddHandler(history.OnMessageUpdate)
+	if *shared.MessageHistoryEnabled {
+		s.AddHandler(history.OnMessageDelete)
+		s.AddHandler(history.OnMessageUpdate)
+	}
+	if *shared.NicknameHistoryEnabled {
+		s.AddHandler(history.OnGuildMemberUpdate)
+	}
 
+	// Register available slash commands
 	log.Debug().Msg("Adding commands...")
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 	for i, v := range commands {
@@ -284,6 +116,8 @@ func main() {
 
 	defer s.Close()
 
+	// This is used for e.g. the report command to know the guild name
+	// This helps the user know where the report is coming from
 	shared.SetGuildName(s)
 	log.Debug().Msg("Guild name: " + shared.GuildName)
 

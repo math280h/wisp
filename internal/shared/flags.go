@@ -11,32 +11,37 @@ import (
 )
 
 var (
+	// General.
 	BotToken = flag.String("token", "", "Bot access token") //nolint:gochecknoglobals,lll // This is a flag shared across the application
-	GuildID  = flag.String("guild", "", "Guild ID")         //nolint:gochecknoglobals,lll // This is a flag shared across the application
 
+	// Guild Information.
+	GuildID = flag.String("guild", "", "Guild ID") //nolint:gochecknoglobals,lll // This is a flag shared across the application
 	// Channels.
-	ReportCategory = flag.String("category", "", "Category ID")       //nolint:gochecknoglobals,lll // This is a flag shared across the application
-	ArchiveChannel = flag.String("archive", "", "Archive channel ID") //nolint:gochecknoglobals,lll // This is a flag shared across the application
-	LogChannel     = flag.String("log", "", "Log channel ID")         //nolint:gochecknoglobals,lll // This is a flag shared across the application
-	AlertChannel   = flag.String("alert", "", "Alert channel ID")     //nolint:gochecknoglobals,lll // This is a flag shared across the application
-	HistoryChannel = flag.String("history", "", "History channel ID") //nolint:gochecknoglobals,lll // This is a flag shared across the application
-
+	ReportCategory    = flag.String("category", "", "Category ID")             //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	ArchiveChannel    = flag.String("archive", "", "Archive channel ID")       //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	LogChannel        = flag.String("log", "", "Log channel ID")               //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	AlertChannel      = flag.String("alert", "", "Alert channel ID")           //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	HistoryChannel    = flag.String("history", "", "History channel ID")       //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	SuggestionChannel = flag.String("suggestion", "", "Suggestion channel ID") //nolint:gochecknoglobals,lll // This is a flag shared across the application
 	// Roles.
 	MutedRole = flag.String("muted", "", "Muted role ID") //nolint:gochecknoglobals,lll // This is a flag shared across the application
-
-	// Logging.
-	PrettyLogs = flag.Bool("pretty", false, "Pretty logs") //nolint:gochecknoglobals,lll // This is a flag shared across the application
 
 	// Moderation Settings.
 	WarnPoints   = flag.Int("warnpoints", 10, "Number of points to warn a user")     //nolint:gochecknoglobals,lll // This is a flag shared across the application
 	StrikePoints = flag.Int("strikepoints", 50, "Number of points to strike a user") //nolint:gochecknoglobals,lll // This is a flag shared across the application
 	MaxPoints    = flag.Int("maxpoints", 100, "Number of points to ban a user")      //nolint:gochecknoglobals,lll // This is a flag shared across the application
 
-	// Suggestions.
-	SuggestionChannel = flag.String("suggestion", "", "Suggestion channel ID") //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	// Feature Flags.
+	MessageHistoryEnabled  = flag.Bool("history_enabled", false, "Enable message history")   //nolint:gochecknoglobals,lll // This is a flag shared across the application
+	NicknameHistoryEnabled = flag.Bool("nickname_enabled", false, "Enable nickname history") //nolint:gochecknoglobals,lll // This is a flag shared across the application
+
+	// Bot Information.
+	PrettyLogs = flag.Bool("pretty", false, "Pretty logs") //nolint:gochecknoglobals,lll // This is a flag shared across the application
 )
 
 var GuildName = "Unknown" //nolint:gochecknoglobals // This is the name of the guild
+
+const enabled = "true"
 
 func Init() { //nolint:gocognit // This function is responsible for initializing the shared flags
 	flag.Parse()
@@ -46,63 +51,52 @@ func Init() { //nolint:gocognit // This function is responsible for initializing
 		log.Fatal("Error loading .env file")
 	}
 
-	// If BotToken is not provided, use the one from the .env file
+	// General
 	if *BotToken == "" {
 		*BotToken = os.Getenv("DISCORD_BOT_TOKEN")
 	}
-	// If GuildID is not provided, use the one from the .env file
+
+	// Guild Information
 	if *GuildID == "" {
 		*GuildID = os.Getenv("DISCORD_GUILD_ID")
 	}
-	// If ReportCategory is not provided, use the one from the .env file
+	// Channels
 	if *ReportCategory == "" {
 		*ReportCategory = os.Getenv("DISCORD_GUILD_REPORT_CATEGORY_ID")
 	}
-	// If ArchiveChannel is not provided, use the one from the .env file
 	if *ArchiveChannel == "" {
 		*ArchiveChannel = os.Getenv("DISCORD_GUILD_ARCHIVE_CHANNEL")
 	}
-	// If LogChannel is not provided, use the one from the .env file
 	if *LogChannel == "" {
 		*LogChannel = os.Getenv("DISCORD_GUILD_LOG_CHANNEL")
 	}
-	// If AlertChannel is not provided, use the one from the .env file
 	if *AlertChannel == "" {
 		*AlertChannel = os.Getenv("DISCORD_GUILD_ALERT_CHANNEL")
 	}
-	// If HistoryChannel is not provided, use the one from the .env file
 	if *HistoryChannel == "" {
 		*HistoryChannel = os.Getenv("DISCORD_GUILD_HISTORY_CHANNEL")
 	}
-	// If MutedRole is not provided, use the one from the .env file
+	if *SuggestionChannel == "" {
+		*SuggestionChannel = os.Getenv("DISCORD_SUGGESTION_CHANNEL")
+	}
+	// Roles
 	if *MutedRole == "" {
 		*MutedRole = os.Getenv("DISCORD_GUILD_MUTED_ROLE")
 	}
-	// If PrettyLogs is not provided, use the one from the .env file
-	if !*PrettyLogs {
-		envPrettyLogs := os.Getenv("PRETTY_LOGS")
-		if envPrettyLogs == "true" {
-			*PrettyLogs = true
-		}
-	}
 
 	// Moderation Settings
-
-	// If WarnPoints is not provided, use the one from the .env file
 	if *WarnPoints == 10 {
 		envWarnPoints := os.Getenv("WARN_POINTS")
 		if envWarnPoints != "" {
 			*WarnPoints, _ = strconv.Atoi(envWarnPoints)
 		}
 	}
-	// If StrikePoints is not provided, use the one from the .env file
 	if *StrikePoints == 50 {
 		envStrikePoints := os.Getenv("STRIKE_POINTS")
 		if envStrikePoints != "" {
 			*StrikePoints, _ = strconv.Atoi(envStrikePoints)
 		}
 	}
-	// If MaxPoints is not provided, use the one from the .env file
 	if *MaxPoints == 100 {
 		envMaxPoints := os.Getenv("MAX_POINTS")
 		if envMaxPoints != "" {
@@ -110,11 +104,26 @@ func Init() { //nolint:gocognit // This function is responsible for initializing
 		}
 	}
 
-	// Suggestions
+	// Feature Flags
+	if !*MessageHistoryEnabled {
+		envMessageHistoryEnabled := os.Getenv("MESSAGE_HISTORY_ENABLED")
+		if envMessageHistoryEnabled == enabled {
+			*MessageHistoryEnabled = true
+		}
+	}
+	if !*NicknameHistoryEnabled {
+		envNicknameHistoryEnabled := os.Getenv("NICKNAME_HISTORY_ENABLED")
+		if envNicknameHistoryEnabled == enabled {
+			*NicknameHistoryEnabled = true
+		}
+	}
 
-	// If SuggestionChannel is not provided, use the one from the .env file
-	if *SuggestionChannel == "" {
-		*SuggestionChannel = os.Getenv("DISCORD_SUGGESTION_CHANNEL")
+	// Bot Information
+	if !*PrettyLogs {
+		envPrettyLogs := os.Getenv("PRETTY_LOGS")
+		if envPrettyLogs == enabled {
+			*PrettyLogs = true
+		}
 	}
 }
 
