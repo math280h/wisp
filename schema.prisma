@@ -1,0 +1,110 @@
+datasource db {
+    provider = "sqlite"
+    url      = "file:wisp.db"
+}
+
+generator db {
+    provider = "go run github.com/steebchen/prisma-client-go"
+}
+
+model User {
+    id       Int    @id @default(autoincrement())
+    userID  String @unique
+    nickname String
+    points   Int    @default(0)
+
+    reports Report[]
+    infractions Infraction[]
+    suggestions Suggestion[]
+    suggestionVotes SuggestionVote[]
+    messages Message[]
+    
+    created_at String @default(dbgenerated("CURRENT_TIMESTAMP"))
+
+    @@map("users")
+}
+
+model Report {
+    id           Int    @id @default(autoincrement())
+    channelID   String
+    channelName String
+
+    user       User   @relation(fields: [userID], references: [id])
+    userID    Int
+
+    status     String @default("pending")
+
+    createdAt String @default(dbgenerated("CURRENT_TIMESTAMP"))
+    updatedAt String @default(dbgenerated("CURRENT_TIMESTAMP"))
+
+    @@map("reports")
+}
+
+
+model Infraction {
+    id           Int    @id @default(autoincrement())
+
+    user         User   @relation(fields: [userID], references: [id])
+    userID      Int
+
+    reason       String
+    type         String
+    points       Int
+
+    moderatorID String
+    moderatorUsername String
+
+    createdAt   String @default(dbgenerated("CURRENT_TIMESTAMP"))
+
+    @@map("infractions")
+}
+
+model Suggestion {
+    id         Int    @id @default(autoincrement())
+    suggestion String
+
+    user       User   @relation(fields: [userID], references: [id])
+    userID   Int
+
+    embedID   String?
+
+    status     String @default("pending")
+
+    votes     SuggestionVote[]
+
+    createdAt String @default(dbgenerated("CURRENT_TIMESTAMP"))
+
+    @@map("suggestions")
+}
+
+model SuggestionVote {
+    id            Int    @id @default(autoincrement())
+
+    suggestion    Suggestion @relation(fields: [suggestionID], references: [id])
+    suggestionID Int
+
+    user          User @relation(fields: [userID], references: [id])
+    userID      Int
+
+    sentiment     String @default("vote_up")
+
+    createdAt    String @default(dbgenerated("CURRENT_TIMESTAMP"))
+
+    @@map("suggestion_votes")
+}
+
+model Message {
+    id         String @id @unique
+
+    content    String
+
+    author     User @relation(fields: [authorID], references: [id])
+    authorID  Int
+    
+    channelID String
+
+    createdAt String @default(dbgenerated("CURRENT_TIMESTAMP"))
+    updatedAt String @default(dbgenerated("CURRENT_TIMESTAMP"))
+
+    @@map("messages")
+}

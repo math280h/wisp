@@ -10,7 +10,15 @@ func KickCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	userID := i.ApplicationCommandData().Options[0].UserValue(s).ID
 	reason := i.ApplicationCommandData().Options[1].StringValue()
 
-	AddInfraction(s, userID, reason, i.Member.User.ID, *shared.MaxPoints/2)
+	AddInfraction(
+		s,
+		userID,
+		reason,
+		i.Member.User.ID,
+		i.Member.User.Username,
+		*shared.MaxPoints/2,
+		"kick",
+	)
 
 	err := s.GuildMemberDeleteWithReason(*shared.GuildID, userID, reason)
 	if err != nil {
@@ -34,7 +42,15 @@ func BanCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	reason := i.ApplicationCommandData().Options[1].StringValue()
 
 	// Add 100% of the max points to the user
-	AddInfraction(s, userID, reason, i.Member.User.ID, *shared.MaxPoints)
+	AddInfraction(
+		s,
+		userID,
+		reason,
+		i.Member.User.ID,
+		i.Member.User.Username,
+		*shared.MaxPoints,
+		"ban",
+	)
 
 	// Respond to the command
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{

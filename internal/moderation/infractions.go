@@ -1,51 +1,66 @@
 package moderation
 
 import (
-	"math280h/wisp/internal/db"
+	"context"
+	"math280h/wisp/db"
 	"math280h/wisp/internal/shared"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/rs/zerolog/log"
 )
 
 func AddPointsToUser(userID string, pointsValue int) (int, bool) {
-	rows, err := db.DBClient.Query("SELECT points FROM users WHERE user_id = ?", userID)
+	userObj, err := shared.DBClient.User.FindFirst(
+		db.User.UserID.Equals(userID),
+	).Exec(context.Background())
 	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	var points int
-	for rows.Next() {
-		err = rows.Scan(&points)
-		if err != nil {
-			panic(err)
-		}
+		log.Error().Err(err).Msg("Failed to get user")
+		return 0, false
 	}
 
-	points += pointsValue
-	_, err = db.DBClient.Exec("UPDATE users SET points = ? WHERE user_id = ?", points, userID)
+	userObj.Points += pointsValue
+
+	// Update the user
+	_, err = shared.DBClient.User.FindUnique(
+		db.User.UserID.Equals(userID),
+	).Update(
+		db.User.Points.Set(userObj.Points),
+	).Exec(context.Background())
 	if err != nil {
-		panic(err)
+		log.Error().Err(err).Msg("Failed to update user")
 	}
 
-	if points >= *shared.MaxPoints {
-		return points, true
+	if userObj.Points >= *shared.MaxPoints {
+		return userObj.Points, true
 	}
 
-	return points, false
+	return userObj.Points, false
 }
 
-func AddInfraction(s *discordgo.Session, userID string, reason string, moderatorID string, points int) int {
+func AddInfraction(
+	s *discordgo.Session,
+	userID string,
+	reason string,
+	moderatorID string,
+	moderatorName string,
+	points int,
+	infractionType string,
+) int {
 	points, isOverLimit := AddPointsToUser(userID, points)
 
-	_, err := db.DBClient.Exec(
-		"INSERT INTO warns (user_id, reason, moderator_id) VALUES (?, ?, ?)",
-		userID,
-		reason,
-		moderatorID,
-	)
+	// Create the infraction
+	_, err := shared.DBClient.Infraction.CreateOne(
+		db.Infraction.User.Link(
+			db.User.UserID.Equals(userID),
+		),
+		db.Infraction.Reason.Set(reason),
+		db.Infraction.Type.Set(infractionType),
+		db.Infraction.Points.Set(points),
+		db.Infraction.ModeratorID.Set(moderatorID),
+		db.Infraction.ModeratorUsername.Set(moderatorName),
+	).Exec(context.Background())
 	if err != nil {
-		panic(err)
+		log.Error().Err(err).Msg("Failed to create infraction")
 	}
 
 	if isOverLimit {
@@ -56,7 +71,7 @@ func AddInfraction(s *discordgo.Session, userID string, reason string, moderator
 			0,
 		)
 		if err != nil {
-			panic(err)
+			log.Error().Err(err).Msg("Failed to ban user")
 		}
 	}
 

@@ -1,7 +1,8 @@
 package core
 
 import (
-	"math280h/wisp/internal/db"
+	"context"
+	"math280h/wisp/db"
 	"math280h/wisp/internal/reports"
 	"math280h/wisp/internal/shared"
 
@@ -29,9 +30,20 @@ func HandleIncomingMessages(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		if channel.ParentID == *shared.ReportCategory {
-			userID, _ := db.GetReportByChannelID(m.ChannelID)
-			log.Debug().Msg("Message is to user: " + userID)
-			userChannel, usrChnlErr := s.UserChannelCreate(userID)
+			// userID, _ := db.GetReportByChannelID(m.ChannelID)
+			reportObj, reportErr := shared.DBClient.Report.FindFirst(
+				db.Report.ChannelID.Equals(m.ChannelID),
+			).With(
+				db.Report.User.Fetch(),
+			).Exec(context.Background())
+			if reportErr != nil {
+				log.Error().Err(reportErr).Msg("Failed to get report")
+				return
+			}
+			user := reportObj.User()
+
+			log.Debug().Msg("Message is to user: " + user.UserID)
+			userChannel, usrChnlErr := s.UserChannelCreate(user.UserID)
 			if usrChnlErr != nil {
 				log.Error().Err(usrChnlErr).Msg("Error creating user channel")
 				return
@@ -44,7 +56,18 @@ func HandleIncomingMessages(s *discordgo.Session, m *discordgo.MessageCreate) {
 				return
 			}
 		} else {
-			db.CreateMessage(m.ID, m.Content, m.Author.ID, m.Author.Mention(), m.Timestamp.String(), m.ChannelID)
+			_, msgErr := shared.DBClient.Message.CreateOne(
+				db.Message.ID.Set(m.ID),
+				db.Message.Content.Set(m.Content),
+				db.Message.Author.Link(
+					db.User.UserID.Equals(m.Author.ID),
+				),
+				db.Message.ChannelID.Set(m.ChannelID),
+			).Exec(context.Background())
+			if msgErr != nil {
+				log.Error().Err(err).Msg("Failed to create message")
+				return
+			}
 		}
 		return
 	}

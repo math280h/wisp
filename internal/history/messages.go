@@ -1,10 +1,12 @@
 package history
 
 import (
+	"context"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/rs/zerolog/log"
 
-	"math280h/wisp/internal/db"
+	"math280h/wisp/db"
 	"math280h/wisp/internal/shared"
 )
 
@@ -18,17 +20,25 @@ type MessageData struct {
 
 func OnMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
 	// Check if the message content was changed
-	content, _, authorTag, _, _, _ := db.GetMessageByID(m.ID)
+	messageObj, err := shared.DBClient.Message.FindFirst(
+		db.Message.ID.Equals(m.ID),
+	).With(
+		db.Message.Author.Fetch(),
+	).Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get message")
+		return
+	}
 
-	if content != "" && content != m.Content {
+	if messageObj.Content != "" && messageObj.Content != m.Content {
 		embed := discordgo.MessageEmbed{
 			Title:       "Message Edited",
-			Description: "A message by " + authorTag + " was edited.",
+			Description: "A message by <@" + messageObj.Author().UserID + "> was edited.",
 			Color:       shared.Orange,
 			Fields: []*discordgo.MessageEmbedField{
 				{
 					Name:  "Old Content",
-					Value: content,
+					Value: messageObj.Content,
 				},
 				{
 					Name:  "New Content",
@@ -45,26 +55,41 @@ func OnMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
 			},
 		}
 
-		db.UpdateContentByID(m.ID, m.Content)
-
-		_, err := s.ChannelMessageSendEmbed(*shared.HistoryChannel, &embed)
+		_, err = shared.DBClient.Message.FindUnique(
+			db.Message.ID.Equals(messageObj.ID),
+		).Update(
+			db.Message.Content.Set(m.Content),
+		).Exec(context.Background())
 		if err != nil {
+			log.Error().Err(err).Msg("Failed to update message content")
+		}
+
+		_, chnlErr := s.ChannelMessageSendEmbed(*shared.HistoryChannel, &embed)
+		if chnlErr != nil {
 			log.Error().Err(err).Msg("Failed to send message edit embed")
 		}
 	}
 }
 
 func OnMessageDelete(s *discordgo.Session, m *discordgo.MessageDelete) {
-	content, _, authorTag, _, _, _ := db.GetMessageByID(m.ID)
+	messageObj, err := shared.DBClient.Message.FindFirst(
+		db.Message.ID.Equals(m.ID),
+	).With(
+		db.Message.Author.Fetch(),
+	).Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get message")
+		return
+	}
 
 	embed := discordgo.MessageEmbed{
 		Title:       "Message Deleted",
-		Description: "A message by " + authorTag + " was deleted.",
+		Description: "A message by <@" + messageObj.Author().UserID + "> was deleted.",
 		Color:       shared.Red,
 		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:  "Content",
-				Value: content,
+				Value: messageObj.Content,
 			},
 		},
 		Footer: &discordgo.MessageEmbedFooter{
@@ -72,9 +97,14 @@ func OnMessageDelete(s *discordgo.Session, m *discordgo.MessageDelete) {
 		},
 	}
 
-	db.DeleteMessageByID(m.ID)
+	_, err = shared.DBClient.Message.FindUnique(
+		db.Message.ID.Equals(messageObj.ID),
+	).Delete().Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to delete message")
+	}
 
-	_, err := s.ChannelMessageSendEmbed(*shared.HistoryChannel, &embed)
+	_, err = s.ChannelMessageSendEmbed(*shared.HistoryChannel, &embed)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to send message delete embed")
 	}

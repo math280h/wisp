@@ -1,7 +1,8 @@
 package moderation
 
 import (
-	"math280h/wisp/internal/db"
+	"context"
+	"math280h/wisp/db"
 	"math280h/wisp/internal/shared"
 	"strconv"
 	"strings"
@@ -61,30 +62,37 @@ func GenerateInfoButtons(channelID string, embedID string, userID string) []disc
 	return buttons
 }
 
-func GenerateOverviewEmbed(userID string, nickname string, points int, reports int, avatar string) discordgo.MessageEmbed {
-	mostRecentInfraction := db.GetMostRecentInfractionByUserID(userID)
+func GenerateOverviewEmbed(user db.UserModel, userDiscordID string, reports int, avatar string) discordgo.MessageEmbed {
+	mostRecentInfraction, err := shared.DBClient.Infraction.FindFirst(
+		db.Infraction.UserID.Equals(user.ID),
+	).OrderBy(
+		db.Infraction.CreatedAt.Order(db.SortOrderDesc),
+	).Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get most recent infraction")
+	}
 
 	embed := discordgo.MessageEmbed{
 		Color: shared.DarkBlue,
 		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:   "User (Tag)",
-				Value:  "<@" + userID + ">",
+				Value:  "<@" + userDiscordID + ">",
 				Inline: true,
 			},
 			{
 				Name:   "User (Username)",
-				Value:  nickname,
+				Value:  user.Nickname,
 				Inline: true,
 			},
 			{
 				Name:   "User (ID)",
-				Value:  userID,
+				Value:  strconv.Itoa(user.ID),
 				Inline: false,
 			},
 			{
 				Name:   "Points",
-				Value:  strconv.Itoa(points),
+				Value:  strconv.Itoa(user.Points),
 				Inline: true,
 			},
 			{
@@ -100,7 +108,8 @@ func GenerateOverviewEmbed(userID string, nickname string, points int, reports i
 			{
 				Name: "Staff ::" + "<@" + mostRecentInfraction.ModeratorID + ">",
 				Value: "Type: **Strike** \n" +
-					"Date: **" + strings.Split(mostRecentInfraction.CreatedAt, "T")[0] + "** (" + shared.StringTimeToDiscordTimestamp(mostRecentInfraction.CreatedAt) + ")\n" +
+					"Date: **" + strings.Split(mostRecentInfraction.CreatedAt, "T")[0] +
+					"** (" + shared.StringTimeToDiscordTimestamp(mostRecentInfraction.CreatedAt) + ")\n" +
 					"Reason: " + mostRecentInfraction.Reason,
 				Inline: false,
 			},
@@ -116,10 +125,33 @@ func GenerateOverviewEmbed(userID string, nickname string, points int, reports i
 func InfoCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	user := i.ApplicationCommandData().Options[0].UserValue(s)
 
-	nick, points, reports := GetUserInfo(user.ID)
+	userObj, err := shared.DBClient.User.FindUnique(
+		db.User.UserID.Equals(user.ID),
+	).Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get user")
+		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "Failed to get user info",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to send fail interaction response for info")
+		}
+		return
+	}
+
+	reportCount := getUserReportCount(userObj.ID)
 
 	// Respond to command with embed
-	embed := GenerateOverviewEmbed(user.ID, nick, points, reports, user.AvatarURL("256x256"))
+	embed := GenerateOverviewEmbed(
+		*userObj,
+		user.ID,
+		reportCount,
+		user.AvatarURL("256x256"),
+	)
 	infoMessage, err := s.ChannelMessageSendComplex(i.ChannelID, &discordgo.MessageSend{
 		Embed: &embed,
 	})
@@ -158,39 +190,4 @@ func InfoCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to send interaction response for info")
 	}
-}
-
-func GetUserInfo(userID string) (string, int, int) {
-	// Get users name, warning points, and number of reports
-	rows, err := db.DBClient.Query("SELECT nickname, points FROM users WHERE user_id = ?", userID)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	var nickname string
-	var points int
-	for rows.Next() {
-		err = rows.Scan(&nickname, &points)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	// Get number of reports
-	rows, err = db.DBClient.Query("SELECT COUNT(*) FROM reports WHERE user_id = ?", userID)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	var reports int
-	for rows.Next() {
-		err = rows.Scan(&reports)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	return nickname, points, reports
 }

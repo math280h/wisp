@@ -67,3 +67,28 @@ Wisp can be configured either through parameters passed to the bot or through en
 You can find all env variables in the [.env.example](.env.example) file.
 
 You can find all command line arguments [flags.go](internal/shared/flags.go)
+
+## Development
+
+### Prisma
+
+```bash
+go run github.com/steebchen/prisma-client-go generate
+go run github.com/steebchen/prisma-client-go db push
+```
+
+### Running the bot
+
+Use [air](https://github.com/air-verse/air) to run the bot with hot reloading.
+
+### Windows
+
+```bash
+air --build.cmd "go build -o /tmp/main.exe cmd\main.go"
+```
+
+### Linux
+
+```bash
+air --build.cmd "go build -o /tmp/main cmd/main.go"
+```

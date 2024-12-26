@@ -1,7 +1,9 @@
 package suggestions
 
 import (
-	"math280h/wisp/internal/db"
+	"context"
+	"math280h/wisp/db"
+	"math280h/wisp/internal/shared"
 	"strconv"
 	"strings"
 
@@ -37,30 +39,91 @@ func SuggestionVote(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		log.Error().Err(err).Msg("Failed to convert suggestion ID to int")
 		return
 	}
-	existingSuggestionEmbed, _, _ := db.GetSuggestionByID(suggestionIDStr)
-	if existingSuggestionEmbed == "" {
-		log.Error().Msg("Suggestion not found")
+	existingSuggestionEmbed, err := shared.DBClient.Suggestion.FindFirst(
+		db.Suggestion.ID.Equals(suggestionIDStr),
+	).Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get suggestion")
 		return
 	}
 
-	existingVoteID, existingVoteSentiment := db.GetSuggestionVoteByUserAndSuggestion(i.Member.User.ID, suggestionIDStr)
-	switch voteType {
-	case "vote_up":
-		db.CreateSuggestionVote(suggestionIDStr, i.Member.User.ID, "upvote")
-		if existingVoteID != 0 && existingVoteSentiment == "downvote" {
-			db.DeleteSuggestionVote(existingVoteID)
+	// Get vote by user and suggestion
+	userObj, err := shared.DBClient.User.UpsertOne(
+		db.User.UserID.Equals(i.Member.User.ID),
+	).Create(
+		db.User.UserID.Set(i.Member.User.ID),
+		db.User.Nickname.Set(i.Member.User.Username),
+	).Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get user")
+		return
+	}
+
+	existingVote, err := shared.DBClient.SuggestionVote.FindFirst(
+		db.SuggestionVote.SuggestionID.Equals(suggestionIDStr),
+		db.SuggestionVote.UserID.Equals(userObj.ID),
+	).Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get existing vote")
+		return
+	}
+
+	if existingVote != nil && existingVote.Sentiment != voteType {
+		_, err = shared.DBClient.SuggestionVote.FindUnique(
+			db.SuggestionVote.ID.Equals(existingVote.ID),
+		).Delete().Exec(context.Background())
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to delete existing vote")
+			return
 		}
-	case "vote_down":
-		db.CreateSuggestionVote(suggestionIDStr, i.Member.User.ID, "downvote")
-		if existingVoteID != 0 && existingVoteSentiment == "upvote" {
-			db.DeleteSuggestionVote(existingVoteID)
+
+		_, err = shared.DBClient.SuggestionVote.CreateOne(
+			db.SuggestionVote.Suggestion.Link(
+				db.Suggestion.ID.Equals(suggestionIDStr),
+			),
+			db.SuggestionVote.User.Link(
+				db.User.ID.Equals(userObj.ID),
+			),
+			db.SuggestionVote.Sentiment.Set(voteType),
+		).Exec(context.Background())
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to create new vote")
+			return
 		}
+	} else {
+		log.Debug().Msg("Vote ignored as duplicate")
+		return
 	}
 
 	// Update the suggestion embed with the new upvote count
 	// Get the upvote and downvote count
-	upvotes, downvotes := db.GetSuggestionVoteCount(suggestionIDStr)
-	embed := getSuggestionEmbed(suggestionIDStr, upvotes, downvotes, existingSuggestionEmbed, i.Member.User.ID)
+	var res []struct {
+		Upvotes   db.RawInt `json:"upvotes"`
+		Downvotes db.RawInt `json:"downvotes"`
+	}
+	err = shared.DBClient.Prisma.QueryRaw(
+		`SELECT 
+        	SUM(CASE WHEN sentiment = 'vote_up' THEN 1 ELSE 0 END) AS upvotes,
+        	SUM(CASE WHEN sentiment = 'vote_down' THEN 1 ELSE 0 END) AS downvotes
+     	FROM suggestion_votes
+     	WHERE suggestion_id = ?`,
+		existingVote.SuggestionID,
+	).Exec(context.Background(), &res)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get suggestion vote count")
+		return
+	}
+	// Convert the reports to an int
+	upvotes := int(res[0].Upvotes)
+	downvotes := int(res[0].Downvotes)
+
+	// Ensure EmbedID is not nil
+	embedID, ok := existingSuggestionEmbed.EmbedID()
+	if !ok {
+		log.Error().Msg("Failed to get embed ID")
+	}
+
+	embed := getSuggestionEmbed(existingVote.SuggestionID, upvotes, downvotes, embedID, i.Member.User.ID)
 	_, err = s.ChannelMessageEditEmbed(i.ChannelID, i.Message.ID, embed)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to edit suggestion embed")

@@ -1,4 +1,4 @@
-package main //nolint:cyclop // Complexity is high due to number of commands, this can maybe be refactored in the future
+package main 
 
 import (
 	"os"
@@ -8,7 +8,6 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"math280h/wisp/internal/core"
-	"math280h/wisp/internal/db"
 	"math280h/wisp/internal/history"
 	"math280h/wisp/internal/moderation"
 	"math280h/wisp/internal/reports"
@@ -60,7 +59,7 @@ func main() {
 		discordgo.IntentsGuildMembers |
 		discordgo.IntentMessageContent
 
-	db.InitDB()
+	shared.InitDB()
 
 	if *shared.PrettyLogs {
 		log.Logger = log.Output( //nolint:reassign // This only changes if the user prefers JSON over PrettyLogs

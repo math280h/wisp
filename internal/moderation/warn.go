@@ -9,7 +9,15 @@ import (
 func WarnCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	userID := i.ApplicationCommandData().Options[0].UserValue(s).ID
 	reason := i.ApplicationCommandData().Options[1].StringValue()
-	points := AddInfraction(s, userID, reason, i.Member.User.ID, *shared.WarnPoints)
+	points := AddInfraction(
+		s,
+		userID,
+		reason,
+		i.Member.User.ID,
+		i.Member.User.Username,
+		*shared.WarnPoints,
+		"warn",
+	)
 
 	// Respond to the command
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{

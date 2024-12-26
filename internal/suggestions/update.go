@@ -1,7 +1,8 @@
 package suggestions
 
 import (
-	"math280h/wisp/internal/db"
+	"context"
+	"math280h/wisp/db"
 	"math280h/wisp/internal/shared"
 
 	"github.com/bwmarrin/discordgo"
@@ -32,9 +33,25 @@ func SetSuggestionStatusCommand(s *discordgo.Session, i *discordgo.InteractionCr
 	}
 
 	// Get the suggestion embed
-	embedID, suggestionUser, suggestionMessage := db.GetSuggestionByID(suggestionIDInt)
+	// embedID, suggestionUser, suggestionMessage := db.GetSuggestionByID(suggestionIDInt)
+	suggestionObj, err := shared.DBClient.Suggestion.FindUnique(
+		db.Suggestion.ID.Equals(suggestionIDInt),
+	).With(
+		db.Suggestion.User.Fetch(),
+	).Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get suggestion")
+		return
+	}
 
-	db.SetSuggestionStatus(suggestionIDInt, status)
+	_, err = shared.DBClient.Suggestion.FindUnique(
+		db.Suggestion.ID.Equals(suggestionIDInt),
+	).Update(
+		db.Suggestion.Status.Set(status),
+	).Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to update suggestion status")
+	}
 
 	// Set color and title
 	var color int
@@ -48,6 +65,11 @@ func SetSuggestionStatusCommand(s *discordgo.Session, i *discordgo.InteractionCr
 		title = "Denied Suggestion!"
 	}
 
+	embedID, ok := suggestionObj.EmbedID()
+	if !ok {
+		log.Error().Msg("Failed to get embed ID")
+	}
+
 	// Update the suggestion embed with the new status, and remove the buttons
 	embed := &discordgo.MessageEmbed{
 		Color:       color,
@@ -56,18 +78,18 @@ func SetSuggestionStatusCommand(s *discordgo.Session, i *discordgo.InteractionCr
 		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:  "Created By",
-				Value: "<@" + suggestionUser + ">",
+				Value: "<@" + suggestionObj.User().UserID + ">",
 			},
 			{
 				Name:   "Suggestion",
-				Value:  suggestionMessage,
+				Value:  suggestionObj.Suggestion,
 				Inline: true,
 			},
 		},
 	}
 
 	// Remove buttons from the suggestion
-	_, err := s.ChannelMessageEditComplex(&discordgo.MessageEdit{
+	_, err = s.ChannelMessageEditComplex(&discordgo.MessageEdit{
 		Channel:    *shared.SuggestionChannel,
 		ID:         embedID,
 		Embeds:     &[]*discordgo.MessageEmbed{embed},

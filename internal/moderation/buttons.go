@@ -1,7 +1,8 @@
 package moderation
 
 import (
-	"math280h/wisp/internal/db"
+	"context"
+	"math280h/wisp/db"
 	"math280h/wisp/internal/shared"
 	"strconv"
 	"strings"
@@ -33,7 +34,17 @@ func InfoButtons(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	// Get the channelID
 	var channelID = customIDSplit[3]
 
-	nick, points, reports := GetUserInfo(userID)
+	// TODO: Handle if a user has never been seen before
+	userObj, err := shared.DBClient.User.FindUnique(
+		db.User.UserID.Equals(userID),
+	).Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get user")
+		return
+	}
+
+	reportCount := getUserReportCount(userObj.ID)
+
 	// Get discord user
 	discordUser, err := s.User(userID)
 	if err != nil {
@@ -46,7 +57,7 @@ func InfoButtons(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	var embed discordgo.MessageEmbed
 	switch action {
 	case "overview":
-		embed = GenerateOverviewEmbed(userID, nick, points, reports, discordUser.AvatarURL("256x256"))
+		embed = GenerateOverviewEmbed(*userObj, userID, reportCount, discordUser.AvatarURL("256x256"))
 	case "infractions":
 		embed = discordgo.MessageEmbed{
 			Title: "Infractions",
@@ -59,12 +70,12 @@ func InfoButtons(s *discordgo.Session, i *discordgo.InteractionCreate) {
 				},
 				{
 					Name:   "Points",
-					Value:  strconv.Itoa(points),
+					Value:  strconv.Itoa(userObj.Points),
 					Inline: true,
 				},
 				{
 					Name:   "Reports",
-					Value:  strconv.Itoa(reports),
+					Value:  strconv.Itoa(reportCount),
 					Inline: true,
 				},
 				{
@@ -79,7 +90,16 @@ func InfoButtons(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 
 		// Get all infractions
-		infractions := db.GetAllInfractionsByUserID(userID)
+		infractions, infractionErr := shared.DBClient.Infraction.FindMany(
+			db.Infraction.UserID.Equals(userObj.ID),
+		).OrderBy(
+			db.Infraction.CreatedAt.Order(db.SortOrderDesc),
+		).Exec(context.Background())
+		if infractionErr != nil {
+			log.Error().Err(err).Msg("Failed to get infractions")
+			return
+		}
+
 		for i, infraction := range infractions {
 			dateWithoutTime := strings.Split(infraction.CreatedAt, "T")[0]
 

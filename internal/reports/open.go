@@ -1,8 +1,9 @@
 package reports
 
 import (
+	"context"
 	"fmt"
-	"math280h/wisp/internal/db"
+	"math280h/wisp/db"
 	"math280h/wisp/internal/shared"
 	"regexp"
 	"strconv"
@@ -36,7 +37,18 @@ func OpenReportChannel(
 		return "", err
 	}
 	log.Info().Msg("Channel created ID:" + newChannel.ID + " Name:" + newChannel.Name + " User:" + authorID)
-	db.CreateReport(newChannel.ID, newChannel.Name, authorID)
+	// db.CreateReport(newChannel.ID, newChannel.Name, authorID)
+	_, err = shared.DBClient.Report.CreateOne(
+		db.Report.ChannelID.Set(newChannel.ID),
+		db.Report.ChannelName.Set(newChannel.Name),
+		db.Report.User.Link(
+			db.User.UserID.Equals(authorID),
+		),
+	).Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create report")
+		return "", err
+	}
 
 	// Send embed message to the channel
 	embed := &discordgo.MessageEmbed{
@@ -127,17 +139,27 @@ func OpenReport( //nolint:gocognit // This function is required to handle the me
 	re := regexp.MustCompile("[^a-zA-Z0-9]+")
 	expectedChannelName := re.ReplaceAllString(autherUsername, "")
 
-	db.CreateUserIfNotExist(authorID, autherUsername)
+	_, err := shared.DBClient.User.UpsertOne(
+		db.User.UserID.Equals(authorID),
+	).Create(
+		db.User.UserID.Set(authorID),
+		db.User.Nickname.Set(autherUsername),
+	).Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create")
+	}
 
 	channelExists := false
-	reportChannelID, channelName := db.GetReportByUserID(authorID)
-	if channelName != "" {
-		channelExists = true
+	reportObj, err := shared.DBClient.Report.FindFirst(
+		db.Report.ChannelID.Equals(channelID),
+	).Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get report")
 	}
 
 	if !channelExists { //nolint:nestif // This is required to know how to handle the message
 		// Create a new channel in the specified category
-		_, err := OpenReportChannel(
+		_, reportErr := OpenReportChannel(
 			s,
 			expectedChannelName,
 			channelID,
@@ -147,7 +169,7 @@ func OpenReport( //nolint:gocognit // This function is required to handle the me
 			avatarURL,
 			detain,
 		)
-		if err != nil {
+		if reportErr != nil {
 			_, err = s.ChannelMessageSend(channelID, "There was an error sending your message. Please try again.")
 			if err != nil {
 				log.Error().Err(err).Msg(errMsg + channelID)
@@ -162,14 +184,14 @@ func OpenReport( //nolint:gocognit // This function is required to handle the me
 				Title:       "Detained",
 				Description: "You have been detained for the following reason: " + content,
 			}
-			_, err := s.ChannelMessageSendEmbed(reportChannelID, embed)
-			if err != nil {
+			_, chnlErr := s.ChannelMessageSendEmbed(reportObj.ChannelID, embed)
+			if chnlErr != nil {
 				log.Error().Err(err).Msg(errMsg + channelID)
 			}
 		} else {
 			// Send the users message to the channel
-			_, err := s.ChannelMessageSend(reportChannelID, content)
-			if err != nil {
+			_, chnlErr := s.ChannelMessageSend(reportObj.ChannelID, content)
+			if chnlErr != nil {
 				log.Error().Err(err).Msg(errMsg + channelID)
 
 				// If the error message contains Unknown Channel, attempt to create a new channel

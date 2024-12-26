@@ -1,7 +1,8 @@
 package suggestions
 
 import (
-	"math280h/wisp/internal/db"
+	"context"
+	"math280h/wisp/db"
 	"math280h/wisp/internal/shared"
 	"strconv"
 
@@ -27,9 +28,27 @@ func CreateSuggestionCommand(s *discordgo.Session, i *discordgo.InteractionCreat
 
 	suggestion := i.ApplicationCommandData().Options[0].StringValue()
 
-	// Inform the user that their suggestion has been created
-	suggestionID := db.CreateSuggestion(i.Member.User.ID, suggestion)
-	embed := getSuggestionEmbed(suggestionID, 0, 0, suggestion, i.Member.User.ID)
+	suggestionObj, err := shared.DBClient.Suggestion.CreateOne(
+		db.Suggestion.Suggestion.Set(suggestion),
+		db.Suggestion.User.Link(
+			db.User.UserID.Equals(i.Member.User.ID),
+		),
+	).Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create suggestion")
+		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "Failed to create suggestion",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to send fail interaction response for suggestion")
+		}
+		return
+	}
+	embed := getSuggestionEmbed(suggestionObj.ID, 0, 0, suggestion, i.Member.User.ID)
 
 	buttons := []discordgo.MessageComponent{
 		discordgo.ActionsRow{
@@ -37,7 +56,7 @@ func CreateSuggestionCommand(s *discordgo.Session, i *discordgo.InteractionCreat
 				discordgo.Button{
 					Label:    "Up",
 					Style:    discordgo.PrimaryButton,
-					CustomID: "vote_up:" + strconv.Itoa(suggestionID),
+					CustomID: "vote_up:" + strconv.Itoa(suggestionObj.ID),
 					Emoji: &discordgo.ComponentEmoji{
 						Name: "⬆️",
 					},
@@ -45,7 +64,7 @@ func CreateSuggestionCommand(s *discordgo.Session, i *discordgo.InteractionCreat
 				discordgo.Button{
 					Label:    "Down",
 					Style:    discordgo.DangerButton,
-					CustomID: "vote_down:" + strconv.Itoa(suggestionID),
+					CustomID: "vote_down:" + strconv.Itoa(suggestionObj.ID),
 					Emoji: &discordgo.ComponentEmoji{
 						Name: "⬇️",
 					},
@@ -74,7 +93,14 @@ func CreateSuggestionCommand(s *discordgo.Session, i *discordgo.InteractionCreat
 		return
 	}
 
-	db.SetSuggestionEmbedID(suggestionID, suggestionMessage.ID)
+	_, err = shared.DBClient.Suggestion.FindUnique(
+		db.Suggestion.ID.Equals(suggestionObj.ID),
+	).Update(
+		db.Suggestion.EmbedID.Set(suggestionMessage.ID),
+	).Exec(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to set suggestion embed ID")
+	}
 
 	// Respond to the command
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{

@@ -1,7 +1,8 @@
 package reports
 
 import (
-	"math280h/wisp/internal/db"
+	"context"
+	"math280h/wisp/db"
 	"math280h/wisp/internal/shared"
 
 	"github.com/bwmarrin/discordgo"
@@ -23,7 +24,15 @@ func Close(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	if channel.ParentID == *shared.ReportCategory { //nolint:nestif // This is required to know how to handle the message
 		// Get the report
-		userID, _ := db.GetReportByChannelID(currentChannel)
+		reportObj, reportErr := shared.DBClient.Report.FindFirst(
+			db.Report.ChannelID.Equals(currentChannel),
+		).With(
+			db.Report.User.Fetch(),
+		).Exec(context.Background())
+		if reportErr != nil {
+			log.Error().Err(err).Msg("Failed to get report")
+			return
+		}
 
 		// Send a message to report log channel
 		embed := &discordgo.MessageEmbed{
@@ -48,7 +57,7 @@ func Close(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 
 		// Send a message to the user
-		userChannel, usrChnlErr := s.UserChannelCreate(userID)
+		userChannel, usrChnlErr := s.UserChannelCreate(reportObj.User().UserID)
 		if usrChnlErr != nil {
 			log.Error().Err(usrChnlErr).Msg("Error creating user channel")
 		}
@@ -69,7 +78,14 @@ func Close(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 
 		// Close report in database
-		db.CloseReport(currentChannel)
+		_, err = shared.DBClient.Report.FindUnique(
+			db.Report.ID.Equals(reportObj.ID),
+		).Update(
+			db.Report.Status.Set("closed"),
+		).Exec(context.Background())
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close report")
+		}
 	} else {
 		// Send a ephemeral message to the user
 		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
