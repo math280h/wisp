@@ -93,6 +93,7 @@ func main() {
 	s.AddHandler(core.HandleIncomingMessages)
 	s.AddHandler(moderation.AlertHandler)
 	s.AddHandler(suggestions.SuggestionVote)
+	s.AddHandler(moderation.InfoButtons)
 
 	// History handlers
 	if *shared.MessageHistoryEnabled {
