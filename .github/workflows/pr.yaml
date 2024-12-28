@@ -23,6 +23,12 @@ jobs:
           go-version: '1.21'
           cache: false
 
+      - name: 📦 Install and generate prisma client
+        run: |
+          go mod download
+          go run github.com/steebchen/prisma-client-go prefetch
+          go run github.com/steebchen/prisma-client-go generate
+
       - name: ✨ golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
