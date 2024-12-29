@@ -2,6 +2,7 @@ package reports
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math280h/wisp/db"
 	"math280h/wisp/internal/shared"
@@ -156,7 +157,7 @@ func OpenReport( //nolint:gocognit // This function is required to handle the me
 		db.Report.Status.Equals("open"),
 	).Exec(context.Background())
 	if err != nil {
-		if err != db.ErrNotFound {
+		if !errors.Is(err, db.ErrNotFound) {
 			log.Error().Err(err).Msg("Failed to get report")
 			return
 		}

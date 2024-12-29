@@ -100,11 +100,11 @@ func InfoButtons(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			return
 		}
 
-		for i, infraction := range infractions {
+		for _, infraction := range infractions {
 			dateWithoutTime := strings.Split(infraction.CreatedAt, "T")[0]
 
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name: "ID:: " + strconv.Itoa(i+1) + " :: Staff ::" + infraction.ModeratorUsername,
+				Name: "ID:: " + strconv.Itoa(infraction.ID) + " :: Staff ::" + infraction.ModeratorUsername,
 				Value: "Type: **" + infraction.Type + "** \n" +
 					"Date: **" + dateWithoutTime + "** (" + shared.StringTimeToDiscordTimestamp(infraction.CreatedAt) + ")\n" +
 					"Reason: " + infraction.Reason,

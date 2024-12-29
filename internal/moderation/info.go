@@ -2,6 +2,7 @@ package moderation
 
 import (
 	"context"
+	"errors"
 	"math280h/wisp/db"
 	"math280h/wisp/internal/shared"
 	"strconv"
@@ -69,7 +70,7 @@ func GenerateOverviewEmbed(user db.UserModel, userDiscordID string, reports int,
 		db.Infraction.CreatedAt.Order(db.SortOrderDesc),
 	).Exec(context.Background())
 	if err != nil {
-		if err != db.ErrNotFound {
+		if !errors.Is(err, db.ErrNotFound) {
 			log.Error().Err(err).Msg("Failed to get most recent infraction")
 		}
 	}

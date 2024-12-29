@@ -128,5 +128,10 @@ func Init() { //nolint:gocognit // This function is responsible for initializing
 }
 
 func SetGuildName(s *discordgo.Session) {
-	GuildName = s.State.Guilds[0].Name
+	guild, err := s.Guild(*GuildID)
+	if err != nil {
+		log.Fatal("Failed to get guild name")
+	}
+
+	GuildName = guild.Name
 }

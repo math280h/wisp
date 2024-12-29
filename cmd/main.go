@@ -29,6 +29,14 @@ var (
 	){}
 )
 
+func onReady(s *discordgo.Session, _ *discordgo.Ready) {
+	log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
+	// This is used for e.g. the report command to know the guild name
+	// This helps the user know where the report is coming from
+	shared.SetGuildName(s)
+	log.Debug().Msg("Guild name: " + shared.GuildName)
+}
+
 func main() {
 	shared.Init()
 
@@ -62,7 +70,7 @@ func main() {
 	shared.InitDB()
 
 	// Set up logging
-	log.Logger = log.With().Caller().Logger()
+	log.Logger = log.With().Caller().Logger() //nolint:reassign // This is the only way to enable caller information
 	if *shared.PrettyLogs {
 		log.Logger = log.Output( //nolint:reassign // This only changes if the user prefers JSON over PrettyLogs
 			zerolog.ConsoleWriter{Out: os.Stderr},
@@ -80,9 +88,7 @@ func main() {
 		}
 	})
 	// Simply ready message when the bot is ready
-	s.AddHandler(func(s *discordgo.Session, _ *discordgo.Ready) {
-		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
-	})
+	s.AddHandler(onReady)
 
 	// Open the session to begin listening for events
 	err = s.Open()
@@ -106,9 +112,10 @@ func main() {
 	}
 
 	// Register available slash commands
-	log.Debug().Msg("Adding commands...")
+	log.Info().Msg("Adding commands...")
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 	for i, v := range commands {
+		log.Debug().Msgf("Adding command: %v", v.Name)
 		var cmd *discordgo.ApplicationCommand
 		cmd, err = s.ApplicationCommandCreate(s.State.User.ID, *shared.GuildID, v)
 		if err != nil {
@@ -116,13 +123,9 @@ func main() {
 		}
 		registeredCommands[i] = cmd
 	}
+	log.Info().Msg("Commands added successfully")
 
 	defer s.Close()
-
-	// This is used for e.g. the report command to know the guild name
-	// This helps the user know where the report is coming from
-	shared.SetGuildName(s)
-	log.Debug().Msg("Guild name: " + shared.GuildName)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
@@ -130,7 +133,7 @@ func main() {
 	<-stop
 
 	defer func() {
-		if err := shared.DBClient.Prisma.Disconnect(); err != nil {
+		if err = shared.DBClient.Prisma.Disconnect(); err != nil {
 			panic(err)
 		}
 	}()
