@@ -32,30 +32,30 @@ func GenerateInfoButtons(channelID string, embedID string, userID string) []disc
 						Name: "⚠️",
 					},
 				},
-				discordgo.Button{
-					Label:    "Notes",
-					Style:    discordgo.PrimaryButton,
-					CustomID: "notes" + suffix,
-					Emoji: &discordgo.ComponentEmoji{
-						Name: "📝",
-					},
-				},
-				discordgo.Button{
-					Label:    "Messages",
-					Style:    discordgo.PrimaryButton,
-					CustomID: "messages" + suffix,
-					Emoji: &discordgo.ComponentEmoji{
-						Name: "💬",
-					},
-				},
-				discordgo.Button{
-					Label:    "Leaves",
-					Style:    discordgo.PrimaryButton,
-					CustomID: "leaves" + suffix,
-					Emoji: &discordgo.ComponentEmoji{
-						Name: "🚪",
-					},
-				},
+				// discordgo.Button{
+				// 	Label:    "Notes",
+				// 	Style:    discordgo.PrimaryButton,
+				// 	CustomID: "notes" + suffix,
+				// 	Emoji: &discordgo.ComponentEmoji{
+				// 		Name: "📝",
+				// 	},
+				// },
+				// discordgo.Button{
+				// 	Label:    "Messages",
+				// 	Style:    discordgo.PrimaryButton,
+				// 	CustomID: "messages" + suffix,
+				// 	Emoji: &discordgo.ComponentEmoji{
+				// 		Name: "💬",
+				// 	},
+				// },
+				// discordgo.Button{
+				// 	Label:    "Leaves",
+				// 	Style:    discordgo.PrimaryButton,
+				// 	CustomID: "leaves" + suffix,
+				// 	Emoji: &discordgo.ComponentEmoji{
+				// 		Name: "🚪",
+				// 	},
+				// },
 			},
 		},
 	}
@@ -69,7 +69,9 @@ func GenerateOverviewEmbed(user db.UserModel, userDiscordID string, reports int,
 		db.Infraction.CreatedAt.Order(db.SortOrderDesc),
 	).Exec(context.Background())
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get most recent infraction")
+		if err != db.ErrNotFound {
+			log.Error().Err(err).Msg("Failed to get most recent infraction")
+		}
 	}
 
 	embed := discordgo.MessageEmbed{
@@ -105,20 +107,32 @@ func GenerateOverviewEmbed(user db.UserModel, userDiscordID string, reports int,
 				Value:  "",
 				Inline: false,
 			},
-			{
-				Name: "Staff ::" + "<@" + mostRecentInfraction.ModeratorID + ">",
-				Value: "Type: **Strike** \n" +
-					"Date: **" + strings.Split(mostRecentInfraction.CreatedAt, "T")[0] +
-					"** (" + shared.StringTimeToDiscordTimestamp(mostRecentInfraction.CreatedAt) + ")\n" +
-					"Reason: " + mostRecentInfraction.Reason,
-				Inline: false,
-			},
 		},
 		// Set the image as the users avatar
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: avatar,
 		},
 	}
+
+	if mostRecentInfraction != nil {
+		// Add the most recent infraction to the embed
+		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+			Name: "Staff ::" + mostRecentInfraction.ModeratorUsername,
+			Value: "Type: **" + mostRecentInfraction.Type + "** \n" +
+				// 2024-12-29 05:10:23
+				"Date: **" + strings.Split(mostRecentInfraction.CreatedAt, " ")[0] +
+				"** (" + shared.StringTimeToDiscordTimestamp(mostRecentInfraction.CreatedAt) + ")\n" +
+				"Reason: " + mostRecentInfraction.Reason,
+			Inline: false,
+		})
+	} else {
+		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+			Name:   "No infractions",
+			Value:  "This user has no infractions",
+			Inline: false,
+		})
+	}
+
 	return embed
 }
 

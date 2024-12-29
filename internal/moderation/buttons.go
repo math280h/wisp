@@ -104,8 +104,8 @@ func InfoButtons(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			dateWithoutTime := strings.Split(infraction.CreatedAt, "T")[0]
 
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name: "ID:: " + strconv.Itoa(i+1) + " :: Staff ::" + "<@" + infraction.ModeratorID + ">",
-				Value: "Type: **Strike** \n" +
+				Name: "ID:: " + strconv.Itoa(i+1) + " :: Staff ::" + infraction.ModeratorUsername,
+				Value: "Type: **" + infraction.Type + "** \n" +
 					"Date: **" + dateWithoutTime + "** (" + shared.StringTimeToDiscordTimestamp(infraction.CreatedAt) + ")\n" +
 					"Reason: " + infraction.Reason,
 				Inline: false,

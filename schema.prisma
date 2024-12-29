@@ -51,8 +51,8 @@ model Infraction {
     type         String
     points       Int
 
-    moderatorID String
-    moderatorUsername String
+    moderatorID String  @map("moderator_id")
+    moderatorUsername String  @map("moderator_username")
 
     createdAt   String @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at")
 

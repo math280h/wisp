@@ -43,10 +43,10 @@ func AddInfraction(
 	reason string,
 	moderatorID string,
 	moderatorName string,
-	points int,
+	newPoints int,
 	infractionType string,
 ) int {
-	points, isOverLimit := AddPointsToUser(userID, points)
+	points, isOverLimit := AddPointsToUser(userID, newPoints)
 
 	// Create the infraction
 	_, err := shared.DBClient.Infraction.CreateOne(
@@ -55,7 +55,7 @@ func AddInfraction(
 		),
 		db.Infraction.Reason.Set(reason),
 		db.Infraction.Type.Set(infractionType),
-		db.Infraction.Points.Set(points),
+		db.Infraction.Points.Set(newPoints),
 		db.Infraction.ModeratorID.Set(moderatorID),
 		db.Infraction.ModeratorUsername.Set(moderatorName),
 	).Exec(context.Background())
