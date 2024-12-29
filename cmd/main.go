@@ -61,6 +61,8 @@ func main() {
 
 	shared.InitDB()
 
+	// Set up logging
+	log.Logger = log.With().Caller().Logger()
 	if *shared.PrettyLogs {
 		log.Logger = log.Output( //nolint:reassign // This only changes if the user prefers JSON over PrettyLogs
 			zerolog.ConsoleWriter{Out: os.Stderr},
@@ -126,4 +128,10 @@ func main() {
 	signal.Notify(stop, os.Interrupt)
 	log.Info().Msg("Bot is now running. Press CTRL+C to exit.")
 	<-stop
+
+	defer func() {
+		if err := shared.DBClient.Prisma.Disconnect(); err != nil {
+			panic(err)
+		}
+	}()
 }

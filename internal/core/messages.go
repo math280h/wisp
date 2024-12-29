@@ -50,6 +50,7 @@ func HandleIncomingMessages(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 
 			// Send the users message to the channel
+
 			_, err = s.ChannelMessageSend(userChannel.ID, m.Content)
 			if err != nil {
 				log.Error().Err(err).Msg("Error sending message")
@@ -65,7 +66,7 @@ func HandleIncomingMessages(s *discordgo.Session, m *discordgo.MessageCreate) {
 				db.Message.ChannelID.Set(m.ChannelID),
 			).Exec(context.Background())
 			if msgErr != nil {
-				log.Error().Err(err).Msg("Failed to create message")
+				log.Error().Err(msgErr).Msg("Failed to create message")
 				return
 			}
 		}

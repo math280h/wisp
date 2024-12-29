@@ -139,22 +139,29 @@ func OpenReport( //nolint:gocognit // This function is required to handle the me
 	re := regexp.MustCompile("[^a-zA-Z0-9]+")
 	expectedChannelName := re.ReplaceAllString(autherUsername, "")
 
-	_, err := shared.DBClient.User.UpsertOne(
+	userObj, err := shared.DBClient.User.UpsertOne(
 		db.User.UserID.Equals(authorID),
 	).Create(
 		db.User.UserID.Set(authorID),
 		db.User.Nickname.Set(autherUsername),
-	).Exec(context.Background())
+	).Update().Exec(context.Background())
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to create")
+		log.Error().Err(err).Msg("Failed to open report")
+		return
 	}
 
-	channelExists := false
+	channelExists := true
 	reportObj, err := shared.DBClient.Report.FindFirst(
-		db.Report.ChannelID.Equals(channelID),
+		db.Report.UserID.Equals(userObj.ID),
+		db.Report.Status.Equals("open"),
 	).Exec(context.Background())
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get report")
+		if err != db.ErrNotFound {
+			log.Error().Err(err).Msg("Failed to get report")
+			return
+		}
+
+		channelExists = false
 	}
 
 	if !channelExists { //nolint:nestif // This is required to know how to handle the message

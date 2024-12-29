@@ -4,6 +4,7 @@ import (
 	"math280h/wisp/internal/shared"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/rs/zerolog/log"
 )
 
 func WarnCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -24,10 +25,11 @@ func WarnCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: "User has been warned",
+			Flags:   64,
 		},
 	})
 	if err != nil {
-		panic(err)
+		log.Error().Err(err).Msg("Failed to respond to warn command")
 	}
 
 	// Inform the user that they have been warned
@@ -35,11 +37,11 @@ func WarnCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	userChannel, err := s.UserChannelCreate(i.Member.User.ID)
 	if err != nil {
-		panic(err)
+		log.Error().Err(err).Msg("Failed to create user channel")
 	}
 
 	_, err = s.ChannelMessageSendEmbed(userChannel.ID, embed)
 	if err != nil {
-		panic(err)
+		log.Error().Err(err).Msg("Failed to send warn message")
 	}
 }

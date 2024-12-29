@@ -11,10 +11,4 @@ func InitDB() {
 	if err := DBClient.Prisma.Connect(); err != nil {
 		panic(err)
 	}
-
-	defer func() {
-		if err := DBClient.Prisma.Disconnect(); err != nil {
-			panic(err)
-		}
-	}()
 }
