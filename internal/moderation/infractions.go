@@ -79,7 +79,10 @@ func AddInfraction(
 	return points
 }
 
-func RemoveInfraction(s *discordgo.Session, i *discordgo.InteractionCreate) { //nolint:gocognit // Complexity is from response handling
+func RemoveInfraction( //nolint:gocognit // Complexity is from response handling
+	s *discordgo.Session,
+	i *discordgo.InteractionCreate,
+) {
 	// Get the infraction ID
 	infractionID := i.ApplicationCommandData().Options[0].IntValue()
 	// Convert int64 to int
