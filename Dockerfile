@@ -10,6 +10,7 @@ RUN go run github.com/steebchen/prisma-client-go prefetch
 
 COPY cmd/ cmd/
 COPY internal/ internal/
+COPY schema.prisma schema.prisma
 
 RUN go run github.com/steebchen/prisma-client-go generate
 
