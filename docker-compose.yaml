@@ -4,4 +4,5 @@ services:
     env_file:
       - .env
     volumes:
-      - ./data:/go/src/app/data
+      - ./data:/go/src/app/data:rw
+    pull_policy: always

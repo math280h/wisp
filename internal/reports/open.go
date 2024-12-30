@@ -154,7 +154,7 @@ func OpenReport( //nolint:gocognit // This function is required to handle the me
 	channelExists := true
 	reportObj, err := shared.DBClient.Report.FindFirst(
 		db.Report.UserID.Equals(userObj.ID),
-		db.Report.Status.Equals("open"),
+		db.Report.Status.Equals("pending"),
 	).Exec(context.Background())
 	if err != nil {
 		if !errors.Is(err, db.ErrNotFound) {
