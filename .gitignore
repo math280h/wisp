@@ -1,3 +1,4 @@
 .env
 wisp.db
+wisp.db-journal
 tmp

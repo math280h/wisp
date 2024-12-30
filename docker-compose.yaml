@@ -1,0 +1,7 @@
+services:
+  wisp:
+    image: ghcr.io/math280h/wisp/wisp:latest
+    env_file:
+      - .env
+    volumes:
+      - ./data:/go/src/app/data

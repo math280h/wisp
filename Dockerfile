@@ -14,7 +14,10 @@ RUN go run github.com/steebchen/prisma-client-go generate
 
 COPY cmd/ cmd/
 COPY internal/ internal/
+COPY data/ data/
+COPY migrations/ migrations/
+COPY start.sh start.sh
 
 RUN go build -o /go/bin/app cmd/main.go
 
-CMD ["/go/bin/app"]
+CMD ["bash", "start.sh"]

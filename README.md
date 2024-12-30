@@ -61,7 +61,7 @@ Create a new bot on the [Discord Developer Portal](https://discord.com/developer
   (*We will make a fix for this in the future*)
 
 ```bash
-docker run -d --env-file .env ghcr.io/math280h/wisp/wisp:latest
+docker compose up
 ```
 
 ## Configuration
