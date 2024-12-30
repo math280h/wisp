@@ -56,6 +56,10 @@ Create a new bot on the [Discord Developer Portal](https://discord.com/developer
 
 ### Running the docker container
 
+**NOTE:** In the .env file, it's important none of the values is sourrounded by quotes.
+  If you are using qoutes docker will escape the values as \"value\" and the bot will not work.
+  (*We will make a fix for this in the future*)
+
 ```bash
 docker run -d --env-file .env ghcr.io/math280h/wisp/wisp:latest
 ```

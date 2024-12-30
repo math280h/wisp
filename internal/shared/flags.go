@@ -2,12 +2,13 @@ package shared
 
 import (
 	"flag"
-	"log"
 	"os"
 	"strconv"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
+
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -48,7 +49,7 @@ func Init() { //nolint:gocognit // This function is responsible for initializing
 
 	envErr := godotenv.Load()
 	if envErr != nil {
-		log.Fatal("Error loading .env file")
+		log.Info().Msg("No .env file found, trying to using environment variables")
 	}
 
 	// General
@@ -130,7 +131,7 @@ func Init() { //nolint:gocognit // This function is responsible for initializing
 func SetGuildName(s *discordgo.Session) {
 	guild, err := s.Guild(*GuildID)
 	if err != nil {
-		log.Fatal("Failed to get guild name")
+		log.Err(err).Msg("Failed to get guild")
 	}
 
 	GuildName = guild.Name
