@@ -135,7 +135,7 @@ func SuggestionVote(s *discordgo.Session, i *discordgo.InteractionCreate) { //no
 		log.Error().Msg("Failed to get embed ID")
 	}
 
-	embed := getSuggestionEmbed(existingVote.SuggestionID, upvotes, downvotes, embedID, i.Member.User.ID)
+	embed := getSuggestionEmbed(suggestionIDStr, upvotes, downvotes, embedID, i.Member.User.ID)
 	_, err = s.ChannelMessageEditEmbed(i.ChannelID, i.Message.ID, embed)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to edit suggestion embed")
