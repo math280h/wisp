@@ -16,6 +16,12 @@ func HandleIncomingMessages(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
+	_, userErr := shared.GetUserIfExists(m.Author)
+	if userErr != nil {
+		log.Error().Err(userErr).Msg("Failed to get or create user")
+		return
+	}
+
 	if m.GuildID != "" { //nolint:nestif // This is required to know how to handle the message
 		// Check if message is from a report channel
 		// If it is, send the message to the user

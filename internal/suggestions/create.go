@@ -28,10 +28,16 @@ func CreateSuggestionCommand(s *discordgo.Session, i *discordgo.InteractionCreat
 
 	suggestion := i.ApplicationCommandData().Options[0].StringValue()
 
+	userObj, userErr := shared.GetUserIfExists(i.Member.User)
+	if userErr != nil {
+		log.Error().Err(userErr).Msg("Failed to get or create user")
+		return
+	}
+
 	suggestionObj, err := shared.DBClient.Suggestion.CreateOne(
 		db.Suggestion.Suggestion.Set(suggestion),
 		db.Suggestion.User.Link(
-			db.User.UserID.Equals(i.Member.User.ID),
+			db.User.ID.Equals(userObj.ID),
 		),
 	).Exec(context.Background())
 	if err != nil {
