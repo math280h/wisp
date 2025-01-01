@@ -19,6 +19,11 @@ type MessageData struct {
 }
 
 func OnMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
+	// Ensure the message is not from the bot
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+
 	// Check if the message content was changed
 	messageObj, err := shared.DBClient.Message.FindFirst(
 		db.Message.ID.Equals(m.ID),
