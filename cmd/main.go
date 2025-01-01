@@ -104,10 +104,12 @@ func main() {
 
 	// History handlers
 	if *shared.MessageHistoryEnabled {
+		log.Info().Msg("History enabled, adding listeners...")
 		s.AddHandler(history.OnMessageDelete)
 		s.AddHandler(history.OnMessageUpdate)
 	}
 	if *shared.NicknameHistoryEnabled {
+		log.Info().Msg("Nickname history enabled, adding listeners...")
 		s.AddHandler(history.OnGuildMemberUpdate)
 	}
 
