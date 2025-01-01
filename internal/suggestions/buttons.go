@@ -48,14 +48,9 @@ func SuggestionVote(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 	// Get vote by user and suggestion
-	userObj, err := shared.DBClient.User.UpsertOne(
-		db.User.UserID.Equals(i.Member.User.ID),
-	).Create(
-		db.User.UserID.Set(i.Member.User.ID),
-		db.User.Nickname.Set(i.Member.User.Username),
-	).Exec(context.Background())
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to get user")
+	userObj, userErr := shared.GetUserIfExists(i.Member.User)
+	if userErr != nil {
+		log.Error().Err(userErr).Msg("Failed to get or create user")
 		return
 	}
 

@@ -10,12 +10,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func AddPointsToUser(userID string, pointsValue int) (int, bool) {
-	userObj, err := shared.DBClient.User.FindFirst(
-		db.User.UserID.Equals(userID),
-	).Exec(context.Background())
+func AddPointsToUser(userID string, userName string, pointsValue int) (int, bool) {
+	userObj, err := shared.GetUserIfExists(&discordgo.User{
+		ID:       userID,
+		Username: userName,
+	})
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get user")
+		log.Error().Err(err).Msg("Failed to get or create user")
 		return 0, false
 	}
 
@@ -41,13 +42,14 @@ func AddPointsToUser(userID string, pointsValue int) (int, bool) {
 func AddInfraction(
 	s *discordgo.Session,
 	userID string,
+	userName string,
 	reason string,
 	moderatorID string,
 	moderatorName string,
 	newPoints int,
 	infractionType string,
 ) int {
-	points, isOverLimit := AddPointsToUser(userID, newPoints)
+	points, isOverLimit := AddPointsToUser(userID, userName, newPoints)
 
 	// Create the infraction
 	_, err := shared.DBClient.Infraction.CreateOne(

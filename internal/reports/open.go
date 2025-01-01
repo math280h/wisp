@@ -140,14 +140,12 @@ func OpenReport( //nolint:gocognit // This function is required to handle the me
 	re := regexp.MustCompile("[^a-zA-Z0-9]+")
 	expectedChannelName := re.ReplaceAllString(autherUsername, "")
 
-	userObj, err := shared.DBClient.User.UpsertOne(
-		db.User.UserID.Equals(authorID),
-	).Create(
-		db.User.UserID.Set(authorID),
-		db.User.Nickname.Set(autherUsername),
-	).Update().Exec(context.Background())
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to open report")
+	userObj, userErr := shared.GetUserIfExists(&discordgo.User{
+		ID:       authorID,
+		Username: autherUsername,
+	})
+	if userErr != nil {
+		log.Error().Err(userErr).Msg("Failed to get or create user")
 		return
 	}
 
