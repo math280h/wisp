@@ -13,6 +13,10 @@ model User {
     nickname String
     points   Int    @default(0)
 
+    lastJoin String? @map("last_join")
+    lastLeave String? @map("last_leave")
+    leaveCount Int @default(0) @map("leave_count")
+
     reports Report[]
     infractions Infraction[]
     suggestions Suggestion[]

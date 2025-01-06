@@ -112,6 +112,8 @@ func main() {
 		log.Info().Msg("Nickname history enabled, adding listeners...")
 		s.AddHandler(history.OnGuildMemberUpdate)
 	}
+	s.AddHandler(history.OnGuildMemeberJoin)
+	s.AddHandler(history.OnGuildMemberLeave)
 
 	// Register available slash commands
 	log.Info().Msg("Adding commands...")

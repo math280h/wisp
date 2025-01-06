@@ -75,6 +75,17 @@ func GenerateOverviewEmbed(user db.UserModel, userDiscordID string, reports int,
 		}
 	}
 
+	// Ensure last leave is not empty, if it is set to "Never"
+	usrLastLeave, lastLeaveOk := user.LastLeave()
+	if !lastLeaveOk {
+		usrLastLeave = "Never"
+	}
+
+	usrLastJoin, lastJoinOk := user.LastJoin()
+	if !lastJoinOk {
+		usrLastJoin = "Never"
+	}
+
 	embed := discordgo.MessageEmbed{
 		Color: shared.DarkBlue,
 		Fields: []*discordgo.MessageEmbedField{
@@ -101,6 +112,26 @@ func GenerateOverviewEmbed(user db.UserModel, userDiscordID string, reports int,
 			{
 				Name:   "Reports",
 				Value:  strconv.Itoa(reports),
+				Inline: true,
+			},
+			{
+				Name:   "__Leave History__",
+				Value:  "",
+				Inline: false,
+			},
+			{
+				Name:   "Last Join",
+				Value:  shared.StringWithTzToDiscordTimestamp(usrLastJoin),
+				Inline: true,
+			},
+			{
+				Name:   "Last Leave",
+				Value:  shared.StringWithTzToDiscordTimestamp(usrLastLeave),
+				Inline: true,
+			},
+			{
+				Name:   "Leave Count",
+				Value:  strconv.Itoa(user.LeaveCount),
 				Inline: true,
 			},
 			{
