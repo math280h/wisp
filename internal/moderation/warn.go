@@ -44,7 +44,7 @@ func WarnCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	// Inform the user that they have been warned
 	embed := GenerateInfractionEmbed(reason, points)
 
-	userChannel, err := s.UserChannelCreate(i.Member.User.ID)
+	userChannel, err := s.UserChannelCreate(userID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create user channel")
 	}
