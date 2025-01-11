@@ -8,6 +8,25 @@ import (
 
 var Commands = []*discordgo.ApplicationCommand{ //nolint:gochecknoglobals // This is a list of commands for Discord
 	{
+		Name:                     "note",
+		Description:              "Add a note to a user",
+		DefaultMemberPermissions: shared.Int64Ptr(discordgo.PermissionKickMembers),
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionUser,
+				Name:        "user",
+				Description: "The user to add a note to",
+				Required:    true,
+			},
+			{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "text",
+				Description: "The text of the note",
+				Required:    true,
+			},
+		},
+	},
+	{
 		Name:                     "warn",
 		Description:              "Warn the user",
 		DefaultMemberPermissions: shared.Int64Ptr(discordgo.PermissionKickMembers),
@@ -115,6 +134,7 @@ var CommandHandlers = map[string]func( //nolint:gochecknoglobals // This is a ma
 	s *discordgo.Session,
 	i *discordgo.InteractionCreate,
 ){
+	"note":              NoteCommand,
 	"warn":              WarnCommand,
 	"strike":            StrikeCommand,
 	"info":              InfoCommand,

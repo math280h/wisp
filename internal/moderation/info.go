@@ -33,14 +33,14 @@ func GenerateInfoButtons(channelID string, embedID string, userID string) []disc
 						Name: "⚠️",
 					},
 				},
-				// discordgo.Button{
-				// 	Label:    "Notes",
-				// 	Style:    discordgo.PrimaryButton,
-				// 	CustomID: "notes" + suffix,
-				// 	Emoji: &discordgo.ComponentEmoji{
-				// 		Name: "📝",
-				// 	},
-				// },
+				discordgo.Button{
+					Label:    "Notes",
+					Style:    discordgo.PrimaryButton,
+					CustomID: "notes" + suffix,
+					Emoji: &discordgo.ComponentEmoji{
+						Name: "📝",
+					},
+				},
 				// discordgo.Button{
 				// 	Label:    "Messages",
 				// 	Style:    discordgo.PrimaryButton,
@@ -175,17 +175,12 @@ func InfoCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		db.User.UserID.Equals(user.ID),
 	).Exec(context.Background())
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get user")
-		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "Failed to get user info",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to send fail interaction response for info")
+		if errors.Is(err, db.ErrNotFound) {
+			shared.SimpleEphemeralInteractionResponse("User not found", s, i.Interaction)
+			return
 		}
+		shared.SimpleEphemeralInteractionResponse("Failed to get user", s, i.Interaction)
+		log.Error().Err(err).Msg("Failed to get user")
 		return
 	}
 
@@ -202,17 +197,8 @@ func InfoCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Embed: &embed,
 	})
 	if err != nil {
+		shared.SimpleEphemeralInteractionResponse("Failed to send info message", s, i.Interaction)
 		log.Error().Err(err).Msg("Failed to send info message")
-		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "Failed to get user info",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to send fail interaction response for info")
-		}
 		return
 	}
 
@@ -223,17 +209,10 @@ func InfoCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Components: &buttons,
 	})
 	if err != nil {
+		shared.SimpleEphemeralInteractionResponse("Failed to add buttons to info message", s, i.Interaction)
 		log.Error().Err(err).Msg("Failed to add buttons to info message")
+		return
 	}
 
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: "User information available below",
-			Flags:   64,
-		},
-	})
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to send interaction response for info")
-	}
+	shared.SimpleEphemeralInteractionResponse("User info generated below", s, i.Interaction)
 }
