@@ -9,34 +9,35 @@ generator db {
 
 model User {
     id       Int    @id @default(autoincrement())
-    userID  String @unique  @map("user_id")
+    userID   String @unique @map("user_id")
     nickname String
     points   Int    @default(0)
 
-    lastJoin String? @map("last_join")
-    lastLeave String? @map("last_leave")
-    leaveCount Int @default(0) @map("leave_count")
+    lastJoin   String? @map("last_join")
+    lastLeave  String? @map("last_leave")
+    leaveCount Int     @default(0) @map("leave_count")
 
-    reports Report[]
-    infractions Infraction[]
-    suggestions Suggestion[]
+    reports         Report[]
+    infractions     Infraction[]
+    suggestions     Suggestion[]
     suggestionVotes SuggestionVote[]
-    messages Message[]
-    
+    messages        Message[]
+    notes           Note[]
+
     created_at String @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at")
 
     @@map("users")
 }
 
 model Report {
-    id           Int    @id @default(autoincrement())
-    channelID   String  @map("channel_id")
-    channelName String  @map("channel_name")
+    id          Int    @id @default(autoincrement())
+    channelID   String @map("channel_id")
+    channelName String @map("channel_name")
 
-    user       User   @relation(fields: [userID], references: [id])
-    userID    Int  @map("user_id")
+    user   User @relation(fields: [userID], references: [id])
+    userID Int  @map("user_id")
 
-    status     String @default("pending")
+    status String @default("pending")
 
     createdAt String @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at")
     updatedAt String @default(dbgenerated("CURRENT_TIMESTAMP")) @map("updated_at")
@@ -44,37 +45,52 @@ model Report {
     @@map("reports")
 }
 
-
 model Infraction {
-    id           Int    @id @default(autoincrement())
+    id Int @id @default(autoincrement())
 
-    user         User   @relation(fields: [userID], references: [id])
-    userID      Int  @map("user_id")
+    user   User @relation(fields: [userID], references: [id])
+    userID Int  @map("user_id")
 
-    reason       String
-    type         String
-    points       Int
+    reason String
+    type   String
+    points Int
 
-    moderatorID String  @map("moderator_id")
-    moderatorUsername String  @map("moderator_username")
+    moderatorID       String @map("moderator_id")
+    moderatorUsername String @map("moderator_username")
 
-    createdAt   String @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at")
+    createdAt String @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at")
 
     @@map("infractions")
+}
+
+model Note {
+    id Int @id @default(autoincrement())
+
+    user   User @relation(fields: [userID], references: [id])
+    userID Int  @map("user_id")
+
+    content String
+
+    moderatorID       String @map("moderator_id")
+    moderatorUsername String @map("moderator_username")
+
+    createdAt String @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at")
+
+    @@map("notes")
 }
 
 model Suggestion {
     id         Int    @id @default(autoincrement())
     suggestion String
 
-    user       User   @relation(fields: [userID], references: [id])
-    userID   Int  @map("user_id")
+    user   User @relation(fields: [userID], references: [id])
+    userID Int  @map("user_id")
 
-    embedID   String?  @map("embed_id")
+    embedID String? @map("embed_id")
 
-    status     String @default("pending")
+    status String @default("pending")
 
-    votes     SuggestionVote[]
+    votes SuggestionVote[]
 
     createdAt String @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at")
 
@@ -82,30 +98,30 @@ model Suggestion {
 }
 
 model SuggestionVote {
-    id            Int    @id @default(autoincrement())
+    id Int @id @default(autoincrement())
 
-    suggestion    Suggestion @relation(fields: [suggestionID], references: [id])
-    suggestionID Int  @map("suggestion_id")
+    suggestion   Suggestion @relation(fields: [suggestionID], references: [id])
+    suggestionID Int        @map("suggestion_id")
 
-    user          User @relation(fields: [userID], references: [id])
-    userID      Int  @map("user_id")
+    user   User @relation(fields: [userID], references: [id])
+    userID Int  @map("user_id")
 
-    sentiment     String @default("vote_up")
+    sentiment String @default("vote_up")
 
-    createdAt    String @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at")
+    createdAt String @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at")
 
     @@map("suggestion_votes")
 }
 
 model Message {
-    id         String @id @unique
+    id String @id @unique
 
-    content    String
+    content String
 
-    author     User @relation(fields: [authorID], references: [id])
-    authorID  Int  @map("author_id")
-    
-    channelID String  @map("channel_id")
+    author   User @relation(fields: [authorID], references: [id])
+    authorID Int  @map("author_id")
+
+    channelID String @map("channel_id")
 
     createdAt String @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at")
     updatedAt String @default(dbgenerated("CURRENT_TIMESTAMP")) @map("updated_at")
